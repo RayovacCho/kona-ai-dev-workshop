@@ -1,11 +1,7 @@
 {
-	"folders": [
-		{
-			"path": "../TencentKona-25"
-		},
-		{
-			"path": "."
-		}
-	],
-	"settings": {}
+    "folders": [
+        {
+            "path": "."
+        }
+    ]
 }
