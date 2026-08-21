@@ -54,7 +54,7 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 个人 fork](https://github.co
 - 构建 Kona JDK，运行相关 **jtreg** 测试，记录基准  
 - 编写 **JMH** 程序，测量当前序列化实现性能，记录基准数字  
 
-### 2.2 使用 CodeBuddy 优化
+### 2.2 使用 Codex 优化
 
 - 规划优化方案（写入 `docs/`）  
 - 在 Kona 源码中实现（主要涉及 `java.io` 序列化路径），并跑测试  
@@ -62,7 +62,7 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 个人 fork](https://github.co
 ### 2.3 进一步改进
 
 - 对优化后的实现再跑 JMH，得到优化后性能  
-- 用 CodeBuddy 分析与基准的差异  
+- 用 Codex 分析与基准的差异  
 - 根据分析做下一轮改进  
 
 相关位置：`apps/`（JMH）、`patches/`、`docs/reports/`。
