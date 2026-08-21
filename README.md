@@ -5,13 +5,7 @@
 1. 用 AI 辅助分析 JVM 崩溃  
 2. 加速 Java 序列化  
 
-JDK 源码改动在独立的 [Tencent Kona JDK 25](https://github.com/Tencent/TencentKona-25) **个人 fork** 中完成。本仓库不包含完整 JDK 源码，只保存说明、补丁、小程序、Agent Skill、MCP 以及报告。
-
-本地 Kona 源码目录（不提交到本仓库）：`/Users/rayovac9/TencentKona-25`
-
-Kona fork（填写你的 GitHub 地址）：
-
-- TODO：`https://github.com/<your-username>/TencentKona-25`
+JDK 源码改动在独立的 [Tencent Kona JDK 25 个人 fork](https://github.com/RayovacCho/TencentKona-25) 中完成。本仓库不包含完整 JDK 源码，只保存说明、补丁、小程序、Agent Skill、MCP 以及报告。
 
 ---
 
