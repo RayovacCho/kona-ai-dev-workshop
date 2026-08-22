@@ -1,0 +1,71 @@
+import json
+import subprocess
+import sys
+import unittest
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+PROJECT = HERE.parent
+REPO = PROJECT.parent.parent
+sys.path.insert(0, str(PROJECT))
+
+from analyzer import AnalysisError, build_jql, parse_log_file, parse_log_text
+
+
+class AnalyzerTest(unittest.TestCase):
+    def test_controlled_assertion(self):
+        result = parse_log_file(str(REPO / "apps/controlled-crash/crash-logs/hs_err_pid16569.log"))
+        self.assertEqual("assertion", result["error"]["kind"])
+        self.assertIn("test assert", result["error"]["message"])
+        self.assertTrue(result["controlled_crash"])
+        self.assertTrue(result["direct_cause"]["intentional"])
+        self.assertEqual("high", result["direct_cause"]["confidence"])
+
+    def test_controlled_sigsegv(self):
+        result = parse_log_file(str(REPO / "apps/controlled-crash/crash-logs/hs_err_pid16579.log"))
+        self.assertEqual("SIGSEGV", result["error"]["signal"])
+        self.assertIn("VMError::controlled_crash", result["problematic_frame"]["symbol"])
+        self.assertEqual("V", result["problematic_frame"]["kind"])
+
+    def test_rejects_non_hs_err(self):
+        with self.assertRaises(AnalysisError):
+            parse_log_text("ordinary Java exception\n")
+
+    def test_jql_escapes_input(self):
+        jql = build_jql('foo "bar" \\ baz')
+        self.assertIn('foo \\"bar\\" \\\\ baz', jql)
+
+    def test_mcp_stdio(self):
+        messages = [
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-03-26"}},
+            {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+            {
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "tools/call",
+                "params": {
+                    "name": "analyze_hotspot_crash",
+                    "arguments": {
+                        "path": str(REPO / "apps/controlled-crash/crash-logs/hs_err_pid16584.log"),
+                        "include_jbs": False,
+                    },
+                },
+            },
+        ]
+        proc = subprocess.run(
+            [sys.executable, str(PROJECT / "server.py")],
+            input="".join(json.dumps(item) + "\n" for item in messages),
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        responses = [json.loads(line) for line in proc.stdout.splitlines()]
+        self.assertEqual("hotspot-crash-analyzer", responses[0]["result"]["serverInfo"]["name"])
+        self.assertEqual(4, len(responses[1]["result"]["tools"]))
+        analysis = responses[2]["result"]["structuredContent"]
+        self.assertEqual("SIGFPE", analysis["error"]["signal"])
+        self.assertTrue(analysis["direct_cause"]["intentional"])
+
+
+if __name__ == "__main__":
+    unittest.main()

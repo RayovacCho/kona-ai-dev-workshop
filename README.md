@@ -127,7 +127,7 @@ jtreg、JMH 的具体测试命令，以及崩溃触发程序的用法，将写�
 | 项 | 状态 |
 |----|------|
 | 1.1 WhiteBox `controlledCrash` + 触发程序 + 崩溃测试 | 已完成（[规划](docs/task-1.1-plan.md) / [报告](docs/reports/task-1.1-controlled-crash.md)） |
-| 1.2 Error Log 分析 + JBS 关联 + Skill / MCP | 未开始 |
+| 1.2 Error Log 分析 + JBS 关联 + Skill / MCP | 已完成（[报告](docs/reports/task-1.2-ai-crash-analysis.md) / [Skill](skills/hotspot-crash-analysis/SKILL.md) / [MCP](mcp/hotspot-crash-analyzer/README.md)） |
 | 2.1 jtreg / JMH 基准 | 未开始 |
 | 2.2 Codex 方案与实现 | 未开始 |
 | 2.3 JMH 对比与再优化 | 未开始 |
