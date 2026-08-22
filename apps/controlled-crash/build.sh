@@ -14,4 +14,4 @@ done < <(find "$KONA_SRC/test/lib/jdk/test/whitebox" -name '*.java' -type f -pri
 javac -d "$OUT/classes" "${whitebox_sources[@]}" \
   "$APP_DIR/src/workshop/crash/ControlledCrash.java"
 jar --create --file "$OUT/controlled-crash.jar" -C "$OUT/classes" .
-echo "Built $OUT/controlled-crash.jar"
+echo "已构建 $OUT/controlled-crash.jar"

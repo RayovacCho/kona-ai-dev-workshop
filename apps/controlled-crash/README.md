@@ -1,4 +1,4 @@
-# Controlled Crash 应用
+# 受控崩溃应用
 
 这个小程序从命令行接收编号，通过测试库中的 WhiteBox API 调用
 `VMError::controlled_crash(int)`。它只适用于 fastdebug/slowdebug JVM，并且会故意终止
@@ -34,5 +34,5 @@ export PATH="$JAVA_HOME/bin:$PATH"
 | 17 | 持有嵌套 `ThreadsListHandle` 时 `fatal` |
 | 其他整数 | 带编号的通用 `fatal` |
 
-注意：`-Xbootclasspath/a` 是必要条件。WhiteBox 原生方法只向 bootstrap class
-loader 加载的 `jdk.test.whitebox.WhiteBox` 注册；普通 classpath 会被 VM 拒绝。
+注意：`-Xbootclasspath/a` 是必要条件。WhiteBox 原生方法只向引导类加载器加载的
+`jdk.test.whitebox.WhiteBox` 注册；普通类路径（classpath）会被 VM 拒绝。

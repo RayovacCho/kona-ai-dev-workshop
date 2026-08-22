@@ -1,11 +1,11 @@
-# Kona AI Dev Workshop
+# Kona AI 开发工作坊
 
 本仓库是课程作业的**规划、代码、报告与工具**集合，对应两项工作：
 
 1. 用 AI 辅助分析 JVM 崩溃  
 2. 加速 Java 序列化  
 
-JDK 源码改动在独立的 [Tencent Kona JDK 25 个人 fork](https://github.com/RayovacCho/TencentKona-25) 中完成。本仓库不包含完整 JDK 源码，只保存说明、补丁、小程序、Agent Skill、MCP 以及报告。
+JDK 源码改动在独立的 [Tencent Kona JDK 25 个人分支](https://github.com/RayovacCho/TencentKona-25) 中完成。本仓库不包含完整 JDK 源码，只保存说明、补丁、小程序、智能体技能、MCP 以及报告。
 
 ---
 
@@ -17,8 +17,8 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 个人 fork](https://github.co
 | 崩溃分析、JMH 等报告 | [docs/reports/](docs/reports/) |
 | 触发 JVM 崩溃的小程序、JMH 程序 | [apps/](apps/) |
 | WhiteBox / 序列化等补丁 | [patches/](patches/) |
-| 崩溃分析 Agent Skill | [skills/](skills/) |
-| 崩溃分析 MCP server | [mcp/](mcp/) |
+| 崩溃分析智能体技能 | [skills/](skills/) |
+| 崩溃分析 MCP 服务器 | [mcp/](mcp/) |
 
 建议阅读顺序：本 README → `docs/` 规划 → 对应 `apps/` / `patches/` / `skills/` / `mcp/` → `docs/reports/` 结论。
 
@@ -41,7 +41,7 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 个人 fork](https://github.co
 - 分析崩溃的直接原因  
 - 关联 [Java Bug System](https://bugs.openjdk.org/) 中的已知问题  
 - 给出解决方案或建议  
-- 编写 Agent Skill 与 MCP server，使 AI 可重复执行上述流程  
+- 编写智能体技能与 MCP 服务器，使 AI 可重复执行上述流程
 
 相关位置：`skills/`、`mcp/`、`docs/reports/`。
 
@@ -78,8 +78,8 @@ kona-ai-dev-workshop/
 │   └── reports/           ← 崩溃分析、JMH 对比等报告
 ├── apps/                  ← 崩溃触发程序、JMH 等独立小项目
 ├── patches/               ← 从 Kona 导出的 .patch，或补丁说明
-├── skills/                ← Agent Skill（如 SKILL.md）
-└── mcp/                   ← MCP server 源码
+├── skills/                ← 智能体技能（如 SKILL.md）
+└── mcp/                   ← MCP 服务器源码
 ```
 
 各目录会随作业推进逐步填入文件。尚未完成的部分在对应文档中用 TODO 标明。
@@ -90,8 +90,8 @@ kona-ai-dev-workshop/
 
 | 内容 | 放哪里 |
 |------|--------|
-| 规划、报告、Skill、MCP、小工具、补丁文件 | **本仓库**（给导师看） |
-| WhiteBox、`java.io` 序列化等 JDK 修改 | **Kona fork**（完整源码与构建） |
+| 规划、报告、技能、MCP、小工具、补丁文件 | **本仓库**（给导师看） |
+| WhiteBox、`java.io` 序列化等 JDK 修改 | **Kona 个人分支**（完整源码与构建） |
 | fastdebug 构建产物、`hs_err` 全文、JMH 原始超大输出 | **不提交**；报告里只放摘要和关键数字 |
 
 从 Kona 导出补丁示例：

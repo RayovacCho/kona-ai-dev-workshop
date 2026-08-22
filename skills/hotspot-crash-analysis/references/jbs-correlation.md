@@ -1,25 +1,23 @@
-# JBS correlation rubric
+# JBS 关联判定准则
 
-A useful JBS correlation is based on a crash fingerprint, not merely the signal name.
-Compare evidence in this order:
+有效的 JBS 关联应以崩溃指纹为依据，而不能只看信号名称。按以下顺序比较证据：
 
-1. Exact assertion/fatal message and source file or function.
-2. Problematic-frame symbol and nearby native frames.
-3. Triggering Java frame or workload and VM subsystem (compiler, GC, runtime, JNI).
-4. OS, CPU architecture, GC, VM flags, and debug/release build.
-5. Affected and fixed versions, including whether the vendor build contains the fix.
+1. 完全一致的断言/致命错误消息，以及源码文件或函数。
+2. 问题帧符号及其附近的原生栈帧。
+3. 触发故障的 Java 栈帧或工作负载，以及 VM 子系统（编译器、GC、运行时、JNI）。
+4. 操作系统、CPU 架构、GC、VM 参数，以及调试版/发布版构建类型。
+5. 受影响版本和修复版本，包括供应商构建是否包含该修复。
 
-Label confidence as:
+按以下标准标注置信度：
 
-- `high`: distinctive message/frame and trigger match; version/platform are compatible.
-- `medium`: subsystem and several frames match, but reproduction or version evidence is incomplete.
-- `low`: keyword or signal similarity only. Never describe this as the known cause.
+- `high`（高）：具有辨识度的消息/栈帧和触发条件均匹配，且版本/平台兼容。
+- `medium`（中）：子系统和多个栈帧匹配，但复现证据或版本证据不完整。
+- `low`（低）：仅关键词或信号相似。绝不能将其描述为已知原因。
 
-Check issue status and resolution. `Duplicate` requires following the parent issue;
-`Not an Issue` is context, not a fix. A listed fix version does not prove a vendor build
-contains the patch; verify its source revision or reproduce on a build known to include
-the fix.
+检查问题状态和解决结果。对于 `Duplicate`（重复）问题，需要继续查看其上级问题；
+`Not an Issue`（非问题）只能作为背景，不能视为修复。列出修复版本并不能证明供应商构建
+已包含相应补丁；应核验其源码版本，或在已知包含该修复的构建上复现。
 
-If no high/medium candidate exists, report “no credible match found” and preserve the
-generated query URL. Recommend collecting the full log, exact JDK build, reproducer,
-core/minidump, native-library versions, and symbolized stack before filing a new issue.
+如果没有高或中置信度的候选项，应报告“未发现可信匹配”，并保留生成的查询 URL。
+建议在提交新问题前收集完整日志、准确的 JDK 构建信息、复现程序、core/minidump、
+原生库版本和符号化堆栈。

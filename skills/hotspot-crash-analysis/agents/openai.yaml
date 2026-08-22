@@ -1,4 +1,4 @@
 interface:
-  display_name: "HotSpot Crash Analysis"
-  short_description: "Parse HotSpot crashes and correlate JBS issues"
-  default_prompt: "Use $hotspot-crash-analysis to analyze this HotSpot error log, identify the direct cause, correlate credible JBS issues, and recommend next actions."
+  display_name: "HotSpot 崩溃分析"
+  short_description: "解析 HotSpot 崩溃并关联 JBS 问题"
+  default_prompt: "使用 $hotspot-crash-analysis 分析这份 HotSpot 错误日志，识别直接原因，关联可信的 JBS 问题，并建议后续操作。"

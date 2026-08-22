@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -ne 1 || ! $1 =~ ^-?[0-9]+$ ]]; then
-  echo "Usage: $0 <crash-number>" >&2
+  echo "用法：$0 <崩溃编号>" >&2
   exit 2
 fi
 
@@ -11,8 +11,8 @@ JAVA_HOME=${JAVA_HOME:-/Users/rayovac9/TencentKona-25/build/macosx-aarch64-serve
 LOG_DIR=${LOG_DIR:-"$APP_DIR/crash-logs"}
 JAR="$APP_DIR/build/controlled-crash.jar"
 
-[[ -x "$JAVA_HOME/bin/java" ]] || { echo "Not executable: $JAVA_HOME/bin/java" >&2; exit 2; }
-[[ -f "$JAR" ]] || { echo "Build the app first: $APP_DIR/build.sh" >&2; exit 2; }
+[[ -x "$JAVA_HOME/bin/java" ]] || { echo "文件不可执行：$JAVA_HOME/bin/java" >&2; exit 2; }
+[[ -f "$JAR" ]] || { echo "请先构建应用：$APP_DIR/build.sh" >&2; exit 2; }
 mkdir -p "$LOG_DIR"
 
 exec "$JAVA_HOME/bin/java" \

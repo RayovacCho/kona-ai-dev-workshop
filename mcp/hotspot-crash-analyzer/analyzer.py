@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic HotSpot error-log parsing and public JBS lookup."""
+"""以确定性方式解析 HotSpot 错误日志并查询公开 JBS。"""
 
 from __future__ import annotations
 
@@ -99,20 +99,20 @@ def _error_details(text: str) -> dict[str, Any]:
             "tid": int(internal_match.group(4)),
         }
     if "A fatal error has been detected by the Java Runtime Environment" not in text:
-        raise AnalysisError("file does not look like a HotSpot fatal error log")
+        raise AnalysisError("文件看起来不像 HotSpot 致命错误日志")
     return {"kind": "unknown", "message": message}
 
 
 def _advice(error: dict[str, Any], frame: dict[str, str] | None) -> list[str]:
-    advice = ["Reproduce on the latest supported update of the same JDK line and preserve the complete hs_err log."]
+    advice = ["在同一 JDK 系列最新的受支持更新版上复现，并保留完整的 hs_err 日志。"]
     frame_kind = frame.get("kind") if frame else None
     if error["kind"] == "signal" and frame_kind == "C":
-        advice.append("Symbolize the native frame and check JNI/JVMTI agents and native-library versions first.")
+        advice.append("对原生栈帧进行符号化，并优先检查 JNI/JVMTI 代理和原生库版本。")
     elif error["kind"] in {"assertion", "guarantee", "fatal", "internal_error"}:
-        advice.append("Match the exact message, source location, and top VM frames against JBS; debug assertions may not reproduce in release builds.")
+        advice.append("将准确的消息、源码位置和顶部 VM 栈帧与 JBS 比对；调试断言可能无法在发布版构建中复现。")
     else:
-        advice.append("Collect a core/minidump and symbolized native stack if the failure is reproducible.")
-    advice.append("Validate any JBS candidate against affected/fixed versions, platform, trigger, and stack signature.")
+        advice.append("如果故障可以复现，请收集 core/minidump 和符号化原生堆栈。")
+    advice.append("根据受影响/修复版本、平台、触发条件和堆栈特征核验每个 JBS 候选项。")
     return advice
 
 
@@ -127,9 +127,9 @@ def _direct_cause(error: dict[str, Any], frame: dict[str, str] | None, controlle
 
     if controlled:
         summary = (
-            f"Intentional WhiteBox controlled crash raised {error['signal']}"
+            f"有意触发的 WhiteBox 受控崩溃引发了 {error['signal']}"
             if error["kind"] == "signal"
-            else f"Intentional WhiteBox controlled crash triggered a HotSpot {error['kind']}"
+            else f"有意触发的 WhiteBox 受控崩溃触发了 HotSpot {error['kind']} 错误"
         )
         return {
             "summary": summary,
@@ -137,19 +137,19 @@ def _direct_cause(error: dict[str, Any], frame: dict[str, str] | None, controlle
             "intentional": True,
             "evidence": evidence,
             "advice": [
-                "No JVM product fix is indicated: this log records a deliberately injected test crash.",
-                "Keep WhiteBoxAPI and controlledCrash restricted to isolated fastdebug test processes.",
-                "For an unexpected production crash, analyze that production hs_err log instead of this fixture.",
+                "无需修复 JVM 产品：此日志记录的是有意注入的测试崩溃。",
+                "WhiteBoxAPI 和 controlledCrash 只能用于隔离的 fastdebug 测试进程。",
+                "如果生产环境发生意外崩溃，应分析相应的生产 hs_err 日志，而不是此测试样本。",
             ],
         }
 
     if error["kind"] == "signal":
         symbol = frame.get("symbol") if frame else None
-        summary = f"Native {error['signal']} in {symbol or 'an unresolved native frame'}"
+        summary = f"原生代码在 {symbol or '未解析的原生栈帧'} 中触发 {error['signal']}"
     elif error.get("message"):
         summary = error["message"]
     else:
-        summary = "HotSpot fatal error; the direct trigger is not present in the parsed header"
+        summary = "HotSpot 致命错误；解析出的错误头中没有直接触发原因"
     return {
         "summary": summary,
         "confidence": "medium" if error["kind"] == "unknown" else "high",
@@ -209,10 +209,10 @@ def parse_log_text(text: str, source: str = "<content>") -> dict[str, Any]:
 def parse_log_file(path: str) -> dict[str, Any]:
     log_path = Path(path).expanduser()
     if not log_path.is_file():
-        raise AnalysisError(f"log file does not exist or is not a regular file: {log_path}")
+        raise AnalysisError(f"日志文件不存在或不是常规文件：{log_path}")
     size = log_path.stat().st_size
     if size > MAX_LOG_BYTES:
-        raise AnalysisError(f"log is {size} bytes; maximum is {MAX_LOG_BYTES}")
+        raise AnalysisError(f"日志大小为 {size} 字节；最大允许 {MAX_LOG_BYTES} 字节")
     return parse_log_text(log_path.read_text(encoding="utf-8", errors="replace"), str(log_path.resolve()))
 
 
@@ -223,9 +223,9 @@ def _escape_jql(value: str) -> str:
 def build_jql(query: str) -> str:
     query = " ".join(query.split())[:200]
     if len(query) < 3:
-        raise AnalysisError("JBS query must contain at least 3 non-whitespace characters")
-    # JBS's default ordering puts the closest text matches first. Sorting by update
-    # time makes broad crash vocabulary drown the distinctive signature.
+        raise AnalysisError("JBS 查询必须包含至少 3 个非空白字符")
+    # JBS 默认优先显示文本最接近的结果。按更新时间排序会让宽泛的崩溃词汇
+    # 淹没具有辨识度的特征。
     return f'project = JDK AND component = hotspot AND text ~ "{_escape_jql(query)}"'
 
 
@@ -249,7 +249,7 @@ def search_jbs(query: str, max_results: int = 5, timeout_seconds: float = 12.0) 
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
             payload = json.load(response)
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-        raise AnalysisError(f"JBS lookup failed: {exc}") from exc
+        raise AnalysisError(f"JBS 查询失败：{exc}") from exc
 
     issues = []
     for item in payload.get("issues", []):
@@ -274,14 +274,14 @@ def search_jbs(query: str, max_results: int = 5, timeout_seconds: float = 12.0) 
         "browse_url": build_jbs_browse_url(query),
         "total": payload.get("total", len(issues)),
         "issues": issues,
-        "warning": "Keyword results are candidates, not confirmed matches; validate signature, trigger, platform, and versions.",
+        "warning": "关键词搜索结果只是候选项，并非确认匹配；请核验特征、触发条件、平台和版本。",
     }
 
 
 def get_jbs_issue(key: str, timeout_seconds: float = 12.0) -> dict[str, Any]:
     key = key.strip().upper()
     if not re.fullmatch(r"JDK-\d+", key):
-        raise AnalysisError("JBS issue key must look like JDK-1234567")
+        raise AnalysisError("JBS 问题编号的格式必须类似 JDK-1234567")
     fields_arg = "summary,status,resolution,description,fixVersions,versions,components,labels,issuelinks,updated"
     url = f"{JBS_BASE}/rest/api/2/issue/{key}?{urllib.parse.urlencode({'fields': fields_arg})}"
     request = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "kona-hotspot-crash-analyzer/1.0"})
@@ -289,7 +289,7 @@ def get_jbs_issue(key: str, timeout_seconds: float = 12.0) -> dict[str, Any]:
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
             item = json.load(response)
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-        raise AnalysisError(f"JBS issue lookup failed: {exc}") from exc
+        raise AnalysisError(f"JBS 问题查询失败：{exc}") from exc
     fields = item.get("fields", {})
     links = []
     for link in fields.get("issuelinks", []):
@@ -321,7 +321,7 @@ def analyze_file(path: str, include_jbs: bool = True, max_results: int = 5) -> d
     if result["controlled_crash"]:
         result["jbs"] = {
             "searched": False,
-            "reason": "Intentional VMError::controlled_crash fixture; generic crash hits would be false positives.",
+            "reason": "这是有意触发 VMError::controlled_crash 的测试样本；通用崩溃搜索结果会造成误报。",
             "issues": [],
             "browse_url": result["jbs_search_url"],
         }

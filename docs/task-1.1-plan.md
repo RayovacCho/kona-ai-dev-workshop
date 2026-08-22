@@ -18,11 +18,11 @@ ControlledCrash.main
   -> WhiteBox.controlledCrash(int) native
   -> WB_ControlledCrash(JNIEnv*, jobject, jint)
   -> VMError::controlled_crash(int)
-  -> HotSpot fatal error handler -> hs_err_pid*.log
+  -> HotSpot 致命错误处理器 -> hs_err_pid*.log
 ```
 
 `VMError::controlled_crash` 由 `ASSERT` 条件编译保护，所以 C++ 入口和 JNI 注册项也使用
-`#ifdef ASSERT`。这使 release 构建仍可编译，但不会暴露一个无法实现的原生入口。调用者
+`#ifdef ASSERT`。这使发布版构建仍可编译，但不会暴露一个无法实现的原生入口。调用者
 还必须显式开启诊断选项与 WhiteBox API。
 
 ## 执行步骤
@@ -37,7 +37,7 @@ ControlledCrash.main
    ```
 
 3. 构建并运行 `apps/controlled-crash`。
-4. 执行 `test-crashes.sh`，逐个检查错误日志中的 signal/error、problematic frame、
+4. 执行 `test-crashes.sh`，逐个检查错误日志中的信号/错误、问题帧、
    VM 版本和 `VMError::controlled_crash` 栈帧。
 5. 将真实环境和结果填入 `docs/reports/task-1.1-controlled-crash.md`。
 
@@ -46,4 +46,4 @@ ControlledCrash.main
 - 每个用例使用新 JVM，测试脚本自身不进入目标 JVM。
 - `hs_err` 与构建产物不入库，只提交可复现实验的摘要。
 - 本 API 仅用于可信测试代码；WhiteBox 本身可读写任意地址，不能交给不可信应用。
-- macOS/Linux 的 signal 文案可能不同，验收以编号对应的错误类别和原生栈为准。
+- macOS/Linux 的信号文案可能不同，验收以编号对应的错误类别和原生栈为准。

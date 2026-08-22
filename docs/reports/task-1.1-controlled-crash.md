@@ -24,11 +24,11 @@ JVM 参数与错误日志位置，批量脚本保证不同编号在独立进程�
 |---:|---|---|---|---|
 | 1 | assert | 134 / SIGABRT (6) | `assert(how == 0) failed: test assert` | 通过 |
 | 2 | guarantee | 134 / SIGABRT (6) | `guarantee(how == 0) failed: test guarantee` | 通过 |
-| 14 | SIGSEGV | 134 / SIGABRT (6) | `SIGSEGV`; problematic frame 为 `VMError::controlled_crash` | 通过 |
-| 15 | SIGFPE | 134 / SIGABRT (6) | `SIGFPE`; frame 为 `__pthread_kill`（macOS 实现） | 通过 |
-| 16 | fatal + active handle | 134 / SIGABRT (6) | `Force crash with an active ThreadsListHandle.` | 通过 |
-| 17 | fatal + nested handle | 134 / SIGABRT (6) | `Force crash with a nested ThreadsListHandle.` | 通过 |
-| 99 | generic fatal | 134 / SIGABRT (6) | `Crashing with number 99` | 通过 |
+| 14 | SIGSEGV | 134 / SIGABRT (6) | `SIGSEGV`；问题帧为 `VMError::controlled_crash` | 通过 |
+| 15 | SIGFPE | 134 / SIGABRT (6) | `SIGFPE`；栈帧为 `__pthread_kill`（macOS 实现） | 通过 |
+| 16 | fatal + 活动 handle | 134 / SIGABRT (6) | `Force crash with an active ThreadsListHandle.` | 通过 |
+| 17 | fatal + 嵌套 handle | 134 / SIGABRT (6) | `Force crash with a nested ThreadsListHandle.` | 通过 |
+| 99 | 通用 fatal | 134 / SIGABRT (6) | `Crashing with number 99` | 通过 |
 
 复现命令：
 

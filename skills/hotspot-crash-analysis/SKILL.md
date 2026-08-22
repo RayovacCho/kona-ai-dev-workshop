@@ -1,43 +1,39 @@
 ---
 name: hotspot-crash-analysis
-description: Analyze HotSpot hs_err_pid error logs, identify the immediate JVM crash cause, correlate credible OpenJDK JBS issues, and recommend mitigations. Use for JVM fatal errors, native signals, internal errors, and crash-log triage; not for ordinary Java exception stack traces.
+description: 分析 HotSpot hs_err_pid 错误日志，识别 JVM 崩溃的直接原因，关联可信的 OpenJDK JBS 问题，并给出缓解建议。适用于 JVM 致命错误、原生信号、内部错误和崩溃日志分诊；不适用于普通 Java 异常堆栈。
 ---
 
-# HotSpot crash analysis
+# HotSpot 崩溃分析
 
-Use the `hotspot-crash-analyzer` MCP tools when available. Start with
-`analyze_hotspot_crash`; if network lookup is unavailable, use its parsed result and
-give the generated JBS search URL so the user can continue manually.
+如果 `hotspot-crash-analyzer` MCP 工具可用，请优先使用。先调用
+`analyze_hotspot_crash`；如果无法联网查询，则使用它的解析结果，并提供生成的 JBS
+搜索 URL，便于用户手动继续调查。
 
-Treat the log as primary evidence. Establish the direct cause from the fatal-error
-header, error message, problematic frame, current thread, and top native/Java frames.
-Do not mistake the signal used by HotSpot's fatal-error termination path for the
-original failure recorded in the header.
+将日志作为首要证据。根据致命错误头、错误消息、问题帧、当前线程以及顶部原生/Java
+栈帧确定直接原因。不要把 HotSpot 致命错误终止流程使用的信号误认为错误头中记录的
+原始故障。
 
-Before claiming a JBS match, read [references/jbs-correlation.md](references/jbs-correlation.md).
-Call a search result a candidate until `get_jbs_issue` has supplied its description and
-its signature, affected build/platform, trigger, and stack context have been compared
-with the log. Include JBS key, title, status, affected
-and fixed versions, URL, and a confidence level. It is valid—and preferable—to conclude
-that no credible known issue was found.
+在声称某项 JBS 问题与日志匹配前，先阅读
+[references/jbs-correlation.md](references/jbs-correlation.md)。在通过
+`get_jbs_issue` 获取问题描述，并将其特征、受影响构建/平台、触发条件和堆栈上下文与
+日志逐项比较之前，只能把搜索结果称为候选项。报告中应包含 JBS 编号、标题、状态、
+受影响版本、修复版本、URL 和置信度。得出“未发现可信的已知问题”这一结论是合理的，
+而且通常更可取。
 
-Recognize intentional crash tests. `VMError::controlled_crash`,
-`WhiteBox.controlledCrash`, `-XX:+WhiteBoxAPI`, and messages such as `test assert` or
-`Crashing with number` are strong evidence that the crash was deliberately injected.
-In that case, state that it is not evidence of a product defect and do not present
-generic signal-related JBS hits as matches.
-When historical context is requested, search exact mechanism or test symbols such as
-`VMError::controlled_crash` or `ThreadsListHandleInErrorHandlingTest`; label those
-issues as mechanism-related context unless the observed output demonstrates the same
-failure described by the issue.
+识别有意触发的崩溃测试。`VMError::controlled_crash`、
+`WhiteBox.controlledCrash`、`-XX:+WhiteBoxAPI`，以及 `test assert`、
+`Crashing with number` 等消息，都是崩溃由人工注入的有力证据。此时应明确说明，这不能
+证明产品存在缺陷，也不要把仅与通用信号相关的 JBS 搜索结果当作匹配项。
+如果用户需要历史背景，应搜索精确的机制或测试符号，例如
+`VMError::controlled_crash` 或 `ThreadsListHandleInErrorHandlingTest`；除非观察到的输出
+与问题描述中的故障相同，否则应将这些问题标为与机制相关的背景资料。
 
-Return a concise report containing:
+返回一份简洁的报告，包含：
 
-1. verdict and confidence;
-2. direct cause with quoted log evidence;
-3. failure path and relevant environment;
-4. JBS assessment, including rejected false positives when useful;
-5. prioritized remediation or next diagnostic actions.
+1. 结论和置信度；
+2. 直接原因及引用的日志证据；
+3. 故障路径和相关环境；
+4. JBS 评估，必要时包括已排除的误报；
+5. 按优先级排列的修复措施或后续诊断操作。
 
-Keep fact, inference, and recommendation visibly distinct. Redact credentials and
-sensitive command-line values when reproducing log excerpts.
+清楚区分事实、推断和建议。引用日志片段时，应隐去凭据和敏感的命令行参数值。
