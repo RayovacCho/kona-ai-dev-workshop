@@ -1,0 +1,31 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  Internal Error (src/hotspot/share/utilities/vmError.cpp:2143), pid=16569, tid=4611
+#  assert(how == 0) failed: test assert
+#
+# JRE version: OpenJDK Runtime Environment (25.0.4) (fastdebug build)
+# Java VM: OpenJDK 64-Bit Server VM (fastdebug, mixed mode, bsd-aarch64)
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI workshop.crash.ControlledCrash 1
+
+Host: macOS AArch64
+Time: Sat Aug 22 02:55:30 2026 CST elapsed time: 0.076492 seconds
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x0000000105517ce0):  JavaThread "main" [_thread_in_vm]
+
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [libjvm.dylib+0x14b6574]  VMError::report(outputStream*, bool)+0x1b58
+V  [libjvm.dylib+0x14b43b8]  VMError::controlled_crash(int)+0x10c
+V  [libjvm.dylib+0x151239c]  WB_ControlledCrash+0x174
+j  jdk.test.whitebox.WhiteBox.controlledCrash(I)V+0
+j  workshop.crash.ControlledCrash.main([Ljava/lang/String;)V+64
+
+Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)
+j  jdk.test.whitebox.WhiteBox.controlledCrash(I)V+0
+j  workshop.crash.ControlledCrash.main([Ljava/lang/String;)V+64

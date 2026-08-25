@@ -1,0 +1,32 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGFPE (0x8) at pc=0x0000000188db65e8, pid=16584, tid=5379
+#
+# JRE version: OpenJDK Runtime Environment (25.0.4) (fastdebug build)
+# Java VM: OpenJDK 64-Bit Server VM (fastdebug, mixed mode, bsd-aarch64)
+# Problematic frame:
+# C  [libsystem_kernel.dylib+0x95e8]  __pthread_kill+0x8
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI workshop.crash.ControlledCrash 15
+
+Host: macOS AArch64
+Time: Sat Aug 22 02:55:30 2026 CST elapsed time: 0.065287 seconds
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x0000000100c53a70):  JavaThread "main" [_thread_in_vm]
+
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+C  [libsystem_kernel.dylib+0x95e8]  __pthread_kill+0x8
+V  [libjvm.dylib+0x14b43d8]  VMError::controlled_crash(int)+0x12c
+V  [libjvm.dylib+0x151239c]  WB_ControlledCrash+0x174
+j  jdk.test.whitebox.WhiteBox.controlledCrash(I)V+0
+j  workshop.crash.ControlledCrash.main([Ljava/lang/String;)V+64
+
+Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)
+j  jdk.test.whitebox.WhiteBox.controlledCrash(I)V+0
+j  workshop.crash.ControlledCrash.main([Ljava/lang/String;)V+64

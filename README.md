@@ -5,7 +5,7 @@
 1. 用 AI 辅助分析 JVM 崩溃  
 2. 加速 Java 序列化  
 
-JDK 源码改动在独立的 [Tencent Kona JDK 25 个人分支](https://github.com/RayovacCho/TencentKona-25) 中完成。本仓库不包含完整 JDK 源码，只保存说明、补丁、小程序、智能体技能、MCP 以及报告。
+JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/RayovacCho/TencentKona-25) 中完成。本仓库不包含完整 JDK 源码，只保存说明、小程序、智能体技能、MCP 以及报告。
 
 ---
 
@@ -16,11 +16,10 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 个人分支](https://github.c
 | 总规划与进度 | [docs/](docs/) |
 | 崩溃分析、JMH 等报告 | [docs/reports/](docs/reports/) |
 | 触发 JVM 崩溃的小程序、JMH 程序 | [apps/](apps/) |
-| WhiteBox / 序列化等补丁 | [patches/](patches/) |
 | 崩溃分析智能体技能 | [skills/](skills/) |
 | 崩溃分析 MCP 服务器 | [mcp/](mcp/) |
 
-建议阅读顺序：本 README → `docs/` 规划 → 对应 `apps/` / `patches/` / `skills/` / `mcp/` → `docs/reports/` 结论。
+建议阅读顺序：本 README → `docs/` 规划 → 对应 `apps/` / `skills/` / `mcp/` → `docs/reports/` 结论。
 
 ---
 
@@ -33,7 +32,8 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 个人分支](https://github.c
 - 提供应用程序，按指定编号触发崩溃  
 - 测试多种崩溃类型，收集 HotSpot Error Log（`hs_err_pid*.log`）
 
-相关位置：`apps/`（触发程序）、`patches/`（WhiteBox 改动）、Kona fork 上的实现分支。
+相关位置：`apps/`（触发程序）以及 Kona fork 上的
+[实现提交](https://github.com/Tencent/TencentKona-25/commit/3dfb920595202df2dfa5b9f5b6c3b124cf32aabf)。
 
 ### 1.2 利用 AI 分析 JVM 崩溃
 
@@ -65,7 +65,7 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 个人分支](https://github.c
 - 用 Codex 分析与基准的差异  
 - 根据分析做下一轮改进  
 
-相关位置：`apps/`（JMH）、`patches/`、`docs/reports/`。
+相关位置：`apps/`（JMH）、Kona fork、`docs/reports/`。
 
 ---
 
@@ -77,7 +77,6 @@ kona-ai-dev-workshop/
 ├── docs/                  ← 规划、步骤说明
 │   └── reports/           ← 崩溃分析、JMH 对比等报告
 ├── apps/                  ← 崩溃触发程序、JMH 等独立小项目
-├── patches/               ← 从 Kona 导出的 .patch，或补丁说明
 ├── skills/                ← 智能体技能（如 SKILL.md）
 └── mcp/                   ← MCP 服务器源码
 ```
@@ -90,16 +89,9 @@ kona-ai-dev-workshop/
 
 | 内容 | 放哪里 |
 |------|--------|
-| 规划、报告、技能、MCP、小工具、补丁文件 | **本仓库**（给导师看） |
+| 规划、报告、技能、MCP、小工具 | **本仓库**（给导师看） |
 | WhiteBox、`java.io` 序列化等 JDK 修改 | **Kona 个人分支**（完整源码与构建） |
 | fastdebug 构建产物、`hs_err` 全文、JMH 原始超大输出 | **不提交**；报告里只放摘要和关键数字 |
-
-从 Kona 导出补丁示例：
-
-```bash
-cd /Users/rayovac9/TencentKona-25
-git format-patch -1 HEAD -o /Users/rayovac9/kona-ai-dev-workshop/patches/
-```
 
 ---
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 PROJECT = HERE.parent
-REPO = PROJECT.parent.parent
+FIXTURES = HERE / "fixtures"
 sys.path.insert(0, str(PROJECT))
 
 from analyzer import AnalysisError, build_jql, parse_log_file, parse_log_text
@@ -14,7 +14,7 @@ from analyzer import AnalysisError, build_jql, parse_log_file, parse_log_text
 
 class AnalyzerTest(unittest.TestCase):
     def test_controlled_assertion(self):
-        result = parse_log_file(str(REPO / "apps/controlled-crash/crash-logs/hs_err_pid16569.log"))
+        result = parse_log_file(str(FIXTURES / "hs_err_controlled_assert.log"))
         self.assertEqual("assertion", result["error"]["kind"])
         self.assertIn("test assert", result["error"]["message"])
         self.assertTrue(result["controlled_crash"])
@@ -22,7 +22,7 @@ class AnalyzerTest(unittest.TestCase):
         self.assertEqual("high", result["direct_cause"]["confidence"])
 
     def test_controlled_sigsegv(self):
-        result = parse_log_file(str(REPO / "apps/controlled-crash/crash-logs/hs_err_pid16579.log"))
+        result = parse_log_file(str(FIXTURES / "hs_err_controlled_sigsegv.log"))
         self.assertEqual("SIGSEGV", result["error"]["signal"])
         self.assertIn("VMError::controlled_crash", result["problematic_frame"]["symbol"])
         self.assertEqual("V", result["problematic_frame"]["kind"])
@@ -46,7 +46,7 @@ class AnalyzerTest(unittest.TestCase):
                 "params": {
                     "name": "analyze_hotspot_crash",
                     "arguments": {
-                        "path": str(REPO / "apps/controlled-crash/crash-logs/hs_err_pid16584.log"),
+                        "path": str(FIXTURES / "hs_err_controlled_sigfpe.log"),
                         "include_jbs": False,
                     },
                 },

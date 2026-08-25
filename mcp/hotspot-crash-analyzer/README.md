@@ -32,6 +32,9 @@ JBS 关键词查询，防止把普通 SIGSEGV/SIGFPE 问题误认为本次受控
 
 ## 验证
 
+测试使用 `tests/fixtures/` 中随仓库提交的精简 `hs_err` 样本，不依赖本机
+`apps/controlled-crash/crash-logs/` 下被忽略的完整日志。
+
 ```bash
 cd /Users/rayovac9/kona-ai-dev-workshop/mcp/hotspot-crash-analyzer
 python3 -m unittest discover -s tests -v

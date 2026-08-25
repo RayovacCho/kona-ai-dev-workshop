@@ -1,0 +1,31 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x000000010ab48304, pid=16579, tid=5123
+#
+# JRE version: OpenJDK Runtime Environment (25.0.4) (fastdebug build)
+# Java VM: OpenJDK 64-Bit Server VM (fastdebug, mixed mode, bsd-aarch64)
+# Problematic frame:
+# V  [libjvm.dylib+0x14b4304]  VMError::controlled_crash(int)+0x58
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI workshop.crash.ControlledCrash 14
+
+Host: macOS AArch64
+Time: Sat Aug 22 02:55:30 2026 CST elapsed time: 0.061927 seconds
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00000001033dbce0):  JavaThread "main" [_thread_in_vm]
+
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [libjvm.dylib+0x14b4304]  VMError::controlled_crash(int)+0x58
+V  [libjvm.dylib+0x151239c]  WB_ControlledCrash+0x174
+j  jdk.test.whitebox.WhiteBox.controlledCrash(I)V+0
+j  workshop.crash.ControlledCrash.main([Ljava/lang/String;)V+64
+
+Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)
+j  jdk.test.whitebox.WhiteBox.controlledCrash(I)V+0
+j  workshop.crash.ControlledCrash.main([Ljava/lang/String;)V+64

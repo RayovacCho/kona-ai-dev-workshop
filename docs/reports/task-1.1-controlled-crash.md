@@ -11,8 +11,12 @@ JVM 参数与错误日志位置，批量脚本保证不同编号在独立进程�
 
 - Kona 源库：`src/hotspot/share/prims/whitebox.cpp`
 - Kona 源库：`test/lib/jdk/test/whitebox/WhiteBox.java`
+- Kona 源库：`test/hotspot/jtreg/runtime/whitebox/ControlledCrashTest.java`
 - 作业库：`apps/controlled-crash/`
-- 作业库补丁：`patches/0001-whitebox-controlled-crash.patch`
+
+JDK 侧改动以独立 Kona fork 的
+[实现提交](https://github.com/Tencent/TencentKona-25/commit/3dfb920595202df2dfa5b9f5b6c3b124cf32aabf)
+为准，本仓库不重复保存补丁文件。
 
 ## 验证记录
 
@@ -38,6 +42,14 @@ export JAVA_HOME=/Users/rayovac9/TencentKona-25/build/macosx-aarch64-server-fast
 export PATH="$JAVA_HOME/bin:$PATH"
 ./build.sh
 ./test-crashes.sh
+```
+
+WhiteBox 接口的 jtreg 回归测试：
+
+```bash
+cd /Users/rayovac9/TencentKona-25
+make test CONF=macosx-aarch64-server-fastdebug \
+    TEST=test/hotspot/jtreg/runtime/whitebox/ControlledCrashTest.java
 ```
 
 ## 结论
