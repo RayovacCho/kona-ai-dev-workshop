@@ -105,7 +105,9 @@ bash configure --with-debug-level=fastdebug
 make images
 ```
 
-jtreg、JMH 的具体测试命令，以及崩溃触发程序的用法，将写在 `docs/` 与 `apps/` 各自的说明中（完成后补链接）。
+序列化 jtreg、JMH 的具体测试命令见
+[任务 2.1 基准报告](docs/reports/task-2.1-serialization-baseline.md) 与
+[JMH 程序说明](apps/serialization-jmh/README.md)。
 
 参考：
 
@@ -120,7 +122,7 @@ jtreg、JMH 的具体测试命令，以及崩溃触发程序的用法，将写�
 |----|------|
 | 1.1 WhiteBox `controlledCrash` + 触发程序 + 崩溃测试 | 已完成（[规划](docs/task-1.1-plan.md) / [报告](docs/reports/task-1.1-controlled-crash.md)） |
 | 1.2 Error Log 分析 + JBS 关联 + Skill / MCP | 已完成（[报告](docs/reports/task-1.2-ai-crash-analysis.md) / [Skill](skills/hotspot-crash-analysis/SKILL.md) / [MCP](mcp/hotspot-crash-analyzer/README.md)） |
-| 2.1 jtreg / JMH 基准 | 未开始 |
+| 2.1 jtreg / JMH 基准 | 已完成（[报告](docs/reports/task-2.1-serialization-baseline.md) / [JMH](apps/serialization-jmh/README.md)） |
 | 2.2 Codex 方案与实现 | 未开始 |
 | 2.3 JMH 对比与再优化 | 未开始 |
 
