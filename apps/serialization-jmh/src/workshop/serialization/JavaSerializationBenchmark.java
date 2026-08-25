@@ -48,6 +48,15 @@ public class JavaSerializationBenchmark {
                 default -> throw new IllegalArgumentException("Unknown payload type: " + payloadType);
             };
             serialized = serialize(payload);
+            Object restored;
+            try {
+                restored = deserialize(serialized);
+            } catch (ClassNotFoundException exception) {
+                throw new IOException("Benchmark payload cannot be deserialized", exception);
+            }
+            if (restored.getClass() != payload.getClass()) {
+                throw new IllegalStateException("Round-trip type mismatch for " + payloadType);
+            }
         }
     }
 
@@ -123,4 +132,3 @@ public class JavaSerializationBenchmark {
         }
     }
 }
-

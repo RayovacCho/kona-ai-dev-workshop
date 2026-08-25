@@ -2,11 +2,12 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-JDK_HOME="${KONA_HOME:-/Users/rayovac9/TencentKona-25/build/macosx-aarch64-server-release/images/jdk}"
+JDK_HOME="${KONA_HOME:-}"
 JMH_VERSION=1.37
 LIB="$ROOT/lib"
 CLASSES="$ROOT/build/classes"
 
+: "${JDK_HOME:?请设置 KONA_HOME，指向用于编译和测试的 JDK}"
 if [[ ! -x "$JDK_HOME/bin/javac" ]]; then
   echo "Kona javac not found at $JDK_HOME/bin/javac" >&2
   echo "Set KONA_HOME to the release JDK image." >&2
@@ -32,6 +33,12 @@ download jmh-generator-annprocess "$JMH_VERSION" org/openjdk/jmh
 download jopt-simple 5.0.4 net/sf/jopt-simple
 download commons-math3 3.6.1 org/apache/commons
 
+if command -v sha256sum >/dev/null 2>&1; then
+  (cd "$LIB" && sha256sum --check "$ROOT/dependencies.sha256")
+else
+  (cd "$LIB" && shasum -a 256 --check "$ROOT/dependencies.sha256")
+fi
+
 rm -rf "$CLASSES"
 mkdir -p "$CLASSES"
 CP="$LIB/jmh-core-$JMH_VERSION.jar:$LIB/jopt-simple-5.0.4.jar:$LIB/commons-math3-3.6.1.jar"
@@ -43,4 +50,3 @@ CP="$LIB/jmh-core-$JMH_VERSION.jar:$LIB/jopt-simple-5.0.4.jar:$LIB/commons-math3
 "$JDK_HOME/bin/jar" --create --file "$ROOT/build/serialization-jmh.jar" -C "$CLASSES" .
 
 echo "Built $ROOT/build/serialization-jmh.jar"
-

@@ -4,8 +4,8 @@
 
 Kona JDK 25 release 镜像构建成功，序列化相关 jtreg 测试共 **160 项全部通过**。
 独立 JMH 程序完成 9 个基准场景；在本机上，小对象完整往返为
-**1.593 ± 0.005 us/op**，100 元素对象图完整往返为
-**17.828 ± 0.632 us/op**。这些数字作为任务 2.2 和 2.3 的优化前基准。
+**1.594 ± 0.012 us/op**，100 元素对象图完整往返为
+**17.866 ± 0.345 us/op**。这些数字作为任务 2.2 和 2.3 的优化前基准。
 
 ## 基准环境
 
@@ -19,24 +19,24 @@ Kona JDK 25 release 镜像构建成功，序列化相关 jtreg 测试共 **160 �
 | jtreg | `8-dev+0`（OpenJDK 配置使用的 `jtreg-8+2` 包） |
 | JMH | 1.37 |
 
-测试时 Kona 工作树中已有 5 个未提交的 HotSpot 编译兼容性改动和一个未跟踪的
-WhiteBox 测试；它们不涉及 `java.io` 序列化代码。本任务没有修改这些文件。后续对比必须
-保留相同基础提交、构建类型、机器和 JMH 参数，并单独记录序列化优化补丁。
+正式基准使用固定提交的独立工作树，运行前 `git status --porcelain` 为空。Apple Clang 21
+会对部分既有 HotSpot `memset` 代码产生新告警，因此 configure 使用
+`--disable-warnings-as-errors`，没有为构建修改或提交任何 JDK 源码。原开发工作树中的
+用户改动保持不变，不参与本次正式结果。
 
 ## 构建与 jtreg 正确性基准
 
-release 镜像使用以下流程构建和测试：
+仓库根目录的统一入口负责检查 clean worktree、构建和测试：
 
 ```bash
-cd /Users/rayovac9/TencentKona-25
-bash configure \
-  --with-boot-jdk=/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home \
-  --with-jtreg=/Users/rayovac9/tools/jtreg-8+2/jtreg
-make CONF=macosx-aarch64-server-release images
-make CONF=macosx-aarch64-server-release build-test-lib
-make CONF=macosx-aarch64-server-release test-only \
-  TEST='test/jdk/java/io/Serializable test/jdk/java/io/ObjectInputStream test/jdk/java/io/ObjectStreamClass' \
-  JTREG='JOBS=4;TIMEOUT_FACTOR=4'
+export KONA_SRC=/path/to/clean/TencentKona-25
+export KONA_HOME="$KONA_SRC/build/macosx-aarch64-server-release/images/jdk"
+export BOOT_JDK=/path/to/bootstrap-jdk
+export JT_HOME=/path/to/jtreg
+
+make configure-kona
+make jdk-images
+make jtreg-baseline
 ```
 
 | 测试组 | 总数 | 通过 | 失败/错误/跳过 |
@@ -46,12 +46,9 @@ make CONF=macosx-aarch64-server-release test-only \
 | `java/io/ObjectStreamClass` | 6 | 6 | 0 |
 | **合计** | **160** | **160** | **0** |
 
-完整本地报告位于 Kona 构建目录的
+`jtreg-baseline` 会显式构建 Java 测试库和 JDK jtreg native 测试镜像，再使用
+`test-only` 运行三个选定目录。完整本地报告位于 Kona 构建目录的
 `build/macosx-aarch64-server-release/test-results/jtreg_test_jdk_java_io_*/`。
-
-本机直接执行 `make test` 会预先编译整个 HotSpot jtreg 原生库，并被无关的
-`vmTestbase/.../ma04t002.cpp` Clang `-Werror` 告警阻断。因此这里先显式构建所需的
-Java 测试库，再用 `test-only` 运行选定目录；这不会跳过选定目录中的任何测试。
 
 ## JMH 设计
 
@@ -64,12 +61,11 @@ Java 测试库，再用 `test-only` 运行选定目录；这不会跳过选定�
 - 返回或消费被测结果，防止 JVM 将工作消除。
 
 固定参数为 AverageTime、`us/op`、单线程、3 forks、每个 fork 预热 5 × 1 秒并测量
-5 × 1 秒。运行命令为：
+5 × 1 秒；正式运行同时启用 GC profiler。运行命令为：
 
 ```bash
-cd /Users/rayovac9/kona-ai-dev-workshop/apps/serialization-jmh
-./build.sh
-./run.sh
+make jmh-baseline
+make capture-environment
 ```
 
 ## JMH 基准结果
@@ -78,12 +74,21 @@ cd /Users/rayovac9/kona-ai-dev-workshop/apps/serialization-jmh
 
 | 操作 | SMALL (us/op) | GRAPH (us/op) | CUSTOM (us/op) |
 |---|---:|---:|---:|
-| `serialize` | 0.397 ± 0.003 | 5.892 ± 0.159 | 0.369 ± 0.007 |
-| `deserialize` | 1.147 ± 0.007 | 11.456 ± 0.062 | 0.669 ± 0.001 |
-| `roundTrip` | 1.593 ± 0.005 | 17.828 ± 0.632 | 1.118 ± 0.052 |
+| `serialize` | 0.398 ± 0.002 | 5.589 ± 0.124 | 0.366 ± 0.004 |
+| `deserialize` | 1.152 ± 0.011 | 11.452 ± 0.120 | 0.681 ± 0.008 |
+| `roundTrip` | 1.594 ± 0.012 | 17.866 ± 0.345 | 1.096 ± 0.003 |
 
-原始 JSON 保存在本地
-`apps/serialization-jmh/results/baseline-20260826-020803.json`，按仓库约定不提交。
+GC profiler 记录的归一化分配量如下；数值越低越好：
+
+| 操作 | SMALL (B/op) | GRAPH (B/op) | CUSTOM (B/op) |
+|---|---:|---:|---:|
+| `serialize` | 6,624 | 18,664 | 6,560 |
+| `deserialize` | 3,653 | 34,021 | 2,840 |
+| `roundTrip` | 10,296 | 54,840 | 9,392 |
+
+正式原始数据与环境清单已提交到
+[`results/task-2.1-baseline`](../../results/task-2.1-baseline/README.md)。JMH JSON 是数字的
+权威来源，`SHA256SUMS` 记录文件校验和并由 `make check-results` 自动验证。
 
 ## 后续对比规则
 
@@ -95,6 +100,5 @@ cd /Users/rayovac9/kona-ai-dev-workshop/apps/serialization-jmh
 加速比 = 基准 / 优化后
 ```
 
-数值越低越好。`GRAPH roundTrip` 的本次误差相对较大（约 3.5%），若优化幅度接近该
+数值越低越好。`GRAPH roundTrip` 的本次误差相对较大（约 1.9%），若优化幅度接近该
 误差范围，应延长测量时间并至少重复整轮基准一次后再下结论。
-
