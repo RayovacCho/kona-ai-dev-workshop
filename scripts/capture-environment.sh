@@ -22,7 +22,7 @@ sha256() {
 }
 
 if [[ -n "$(git -C "$KONA_SRC" status --porcelain)" ]]; then
-  echo "拒绝记录 dirty Kona 工作树" >&2
+  echo "拒绝记录含未提交修改的 Kona 工作树" >&2
   exit 2
 fi
 

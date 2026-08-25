@@ -15,8 +15,8 @@ JVM 参数与错误日志位置，批量脚本保证不同编号在独立进程�
 - 作业库：`apps/controlled-crash/`
 
 JDK 侧改动以独立 Kona fork 的
-[实现提交](https://github.com/RayovacCho/TencentKona-25/commit/3dfb920595202df2dfa5b9f5b6c3b124cf32aabf)
-为准，本仓库不重复保存补丁文件。
+[接口实现提交](https://github.com/RayovacCho/TencentKona-25/commit/3dfb920595202df2dfa5b9f5b6c3b124cf32aabf)和
+[回归测试提交](https://github.com/RayovacCho/TencentKona-25/commit/5b6cb179a)为准，本仓库不重复保存补丁文件。
 
 ## 验证记录
 

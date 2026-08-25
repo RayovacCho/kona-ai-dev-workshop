@@ -46,7 +46,7 @@ def check_checksums() -> None:
         path = RESULT_DIR / name.lstrip("*")
         actual = sha256(path)
         if actual != expected:
-            raise SystemExit(f"checksum mismatch: {path}")
+            raise SystemExit(f"校验和不匹配：{path}")
 
 
 def check_environment() -> None:
@@ -57,13 +57,13 @@ def check_environment() -> None:
             values[key] = value
     missing = REQUIRED_ENV - values.keys()
     if missing:
-        raise SystemExit(f"environment fields missing: {sorted(missing)}")
+        raise SystemExit(f"缺少环境字段：{sorted(missing)}")
     if values["kona_worktree"] != "clean":
-        raise SystemExit("formal baseline was not produced from a clean Kona worktree")
+        raise SystemExit("正式基准并非由无未提交修改的 Kona 工作树生成")
     if values["benchmark_source_sha256"] != sha256(BENCHMARK_SOURCE):
-        raise SystemExit("benchmark source differs from the formal baseline")
+        raise SystemExit("基准源码与正式基准记录不一致")
     if values["dependency_lock_sha256"] != sha256(DEPENDENCY_LOCK):
-        raise SystemExit("dependency lock differs from the formal baseline")
+        raise SystemExit("依赖锁定文件与正式基准记录不一致")
 
 
 def check_jmh() -> None:
@@ -79,7 +79,7 @@ def check_jmh() -> None:
         for entry in results
     }
     if actual != expected or len(results) != len(expected):
-        raise SystemExit(f"unexpected JMH result matrix: {sorted(actual)}")
+        raise SystemExit(f"JMH 结果矩阵不符合预期：{sorted(actual)}")
     report = BASELINE_REPORT.read_text(encoding="utf-8")
     for entry in results:
         expected_configuration = {
@@ -93,27 +93,27 @@ def check_jmh() -> None:
         }
         for key, expected_value in expected_configuration.items():
             if entry.get(key) != expected_value:
-                raise SystemExit(f"unexpected JMH configuration {key}: {entry.get(key)}")
+                raise SystemExit(f"JMH 配置不符合预期 {key}：{entry.get(key)}")
         if entry["primaryMetric"].get("scoreUnit") != "us/op":
-            raise SystemExit(f"unexpected score unit: {entry['benchmark']}")
+            raise SystemExit(f"分数单位不符合预期：{entry['benchmark']}")
         if entry["primaryMetric"]["score"] <= 0:
-            raise SystemExit(f"invalid primary score: {entry['benchmark']}")
+            raise SystemExit(f"主分数无效：{entry['benchmark']}")
         allocation = entry.get("secondaryMetrics", {}).get("gc.alloc.rate.norm", {})
         if allocation.get("score", 0) <= 0:
-            raise SystemExit(f"missing GC allocation metric: {entry['benchmark']}")
+            raise SystemExit(f"缺少 GC 分配指标：{entry['benchmark']}")
         displayed_score = (
             f"{entry['primaryMetric']['score']:.3f} ± "
             f"{entry['primaryMetric']['scoreError']:.3f}"
         )
         displayed_allocation = f"{allocation['score']:,.0f}"
         if displayed_score not in report:
-            raise SystemExit(f"JMH score missing from report: {displayed_score}")
+            raise SystemExit(f"报告中缺少 JMH 分数：{displayed_score}")
         if displayed_allocation not in report:
-            raise SystemExit(f"allocation score missing from report: {displayed_allocation}")
+            raise SystemExit(f"报告中缺少分配量分数：{displayed_allocation}")
 
 
 if __name__ == "__main__":
     check_checksums()
     check_environment()
     check_jmh()
-    print("Formal baseline artifacts: OK")
+    print("正式基准产物：检查通过")

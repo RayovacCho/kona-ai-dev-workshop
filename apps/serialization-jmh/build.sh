@@ -9,8 +9,8 @@ CLASSES="$ROOT/build/classes"
 
 : "${JDK_HOME:?请设置 KONA_HOME，指向用于编译和测试的 JDK}"
 if [[ ! -x "$JDK_HOME/bin/javac" ]]; then
-  echo "Kona javac not found at $JDK_HOME/bin/javac" >&2
-  echo "Set KONA_HOME to the release JDK image." >&2
+  echo "未找到可执行的 Kona javac：$JDK_HOME/bin/javac" >&2
+  echo "请将 KONA_HOME 设置为发布版 JDK 镜像目录。" >&2
   exit 1
 fi
 
@@ -49,4 +49,4 @@ CP="$LIB/jmh-core-$JMH_VERSION.jar:$LIB/jopt-simple-5.0.4.jar:$LIB/commons-math3
   "$ROOT/src/workshop/serialization/JavaSerializationBenchmark.java"
 "$JDK_HOME/bin/jar" --create --file "$ROOT/build/serialization-jmh.jar" -C "$CLASSES" .
 
-echo "Built $ROOT/build/serialization-jmh.jar"
+echo "已构建 $ROOT/build/serialization-jmh.jar"

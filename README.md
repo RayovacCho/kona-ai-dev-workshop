@@ -61,7 +61,8 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 
 相关内容：[受控崩溃应用](apps/controlled-crash/README.md)、
 [任务报告](docs/reports/task-1.1-controlled-crash.md)以及 Kona fork 上的
-[实现提交](https://github.com/RayovacCho/TencentKona-25/commit/3dfb920595202df2dfa5b9f5b6c3b124cf32aabf)。
+[接口实现提交](https://github.com/RayovacCho/TencentKona-25/commit/3dfb920595202df2dfa5b9f5b6c3b124cf32aabf)和
+[回归测试提交](https://github.com/RayovacCho/TencentKona-25/commit/5b6cb179a)。
 
 ### 1.2 利用 AI 分析 JVM 崩溃
 
