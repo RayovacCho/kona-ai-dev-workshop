@@ -5,7 +5,7 @@
 1. 用 AI 辅助分析 JVM 崩溃  
 2. 加速 Java 序列化  
 
-JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/RayovacCho/TencentKona-25) 中完成。本仓库不包含完整 JDK 源码，只保存说明、小程序、智能体技能、MCP 以及报告。
+JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/RayovacCho/TencentKona-25) 中完成。本仓库不包含完整 JDK 源码，保存规划与报告、演示程序、智能体技能、MCP、正式基准结果以及复现自动化。
 
 ---
 
@@ -24,6 +24,32 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 
 ---
 
+## 快速开始
+
+验证仓库内的脚本、MCP 测试和已提交的正式基准结果：
+
+```bash
+make check
+```
+
+在新的结果目录中完整复跑 Kona release 构建、序列化 jtreg 和 JMH：
+
+```bash
+export KONA_SRC=/path/to/clean/TencentKona-25
+export KONA_CONF=macosx-aarch64-server-release
+export KONA_HOME="$KONA_SRC/build/$KONA_CONF/images/jdk"
+export BOOT_JDK=/path/to/bootstrap-jdk
+export JT_HOME=/path/to/jtreg
+
+make configure-kona
+RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
+```
+
+正式结果默认不可覆盖；重复实验必须使用新的 `RESULT_DIR`。完整前置条件与命令说明见
+[构建与基准复现约定](docs/reproducibility.md)。
+
+---
+
 ## 任务 1：AI 辅助分析 JVM 崩溃
 
 ### 1.1 扩展 WhiteBox API，在运行期触发 JVM 崩溃
@@ -33,7 +59,8 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 - 提供应用程序，按指定编号触发崩溃  
 - 测试多种崩溃类型，收集 HotSpot Error Log（`hs_err_pid*.log`）
 
-相关位置：`apps/`（触发程序）以及 Kona fork 上的
+相关内容：[受控崩溃应用](apps/controlled-crash/README.md)、
+[任务报告](docs/reports/task-1.1-controlled-crash.md)以及 Kona fork 上的
 [实现提交](https://github.com/RayovacCho/TencentKona-25/commit/3dfb920595202df2dfa5b9f5b6c3b124cf32aabf)。
 
 ### 1.2 利用 AI 分析 JVM 崩溃
@@ -44,7 +71,9 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 - 给出解决方案或建议  
 - 编写智能体技能与 MCP 服务器，使 AI 可重复执行上述流程
 
-相关位置：`skills/`、`mcp/`、`docs/reports/`。
+相关内容：[任务报告](docs/reports/task-1.2-ai-crash-analysis.md)、
+[崩溃分析 Skill](skills/hotspot-crash-analysis/SKILL.md)和
+[MCP 服务器](mcp/hotspot-crash-analyzer/README.md)。
 
 ---
 
@@ -54,6 +83,10 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 
 - 构建 Kona JDK，运行相关 **jtreg** 测试，记录基准  
 - 编写 **JMH** 程序，测量当前序列化实现性能，记录基准数字  
+
+相关内容：[JMH 程序](apps/serialization-jmh/README.md)、
+[基准报告](docs/reports/task-2.1-serialization-baseline.md)和
+[机器可读结果](results/task-2.1-baseline/README.md)。
 
 ### 2.2 使用 Codex 优化
 
@@ -66,7 +99,8 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 - 用 Codex 分析与基准的差异  
 - 根据分析做下一轮改进  
 
-相关位置：`apps/`（JMH）、Kona fork、`docs/reports/`。
+后续优化继续复用同一套 [JMH 程序](apps/serialization-jmh/README.md)和
+[复现约定](docs/reproducibility.md)，源码改动进入 Kona fork，分析结论进入 `docs/reports/`。
 
 ---
 
@@ -74,11 +108,15 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 
 ```text
 kona-ai-dev-workshop/
+├── .github/workflows/    ← 持续集成检查
 ├── README.md              ← 本文件
+├── Makefile               ← 构建、测试与基准统一入口
+├── LICENSE                ← MIT 许可证
 ├── docs/                  ← 规划、步骤说明
 │   └── reports/           ← 崩溃分析、JMH 对比等报告
 ├── apps/                  ← 崩溃触发程序、JMH 等独立小项目
 ├── results/               ← 正式 JSON、环境清单和校验和
+├── scripts/               ← 环境采集与结果校验脚本
 ├── skills/                ← 智能体技能（如 SKILL.md）
 └── mcp/                   ← MCP 服务器源码
 ```
@@ -98,9 +136,16 @@ kona-ai-dev-workshop/
 
 ---
 
-## 环境与构建（Kona）
+## Kona 构建类型
 
-所有脚本使用环境变量，不依赖个人目录。以 fastdebug 构建为例：
+两类任务使用不同构建，不能混用：
+
+| 构建 | 用途 |
+|---|---|
+| fastdebug | WhiteBox、受控崩溃和诊断测试 |
+| release/product | jtreg 正确性基准和 JMH 性能测试 |
+
+fastdebug 示例：
 
 ```bash
 export KONA_SRC=/path/to/TencentKona-25
@@ -109,10 +154,8 @@ bash configure --with-debug-level=fastdebug
 make images
 ```
 
-完整规则与统一命令见[构建与基准复现约定](docs/reproducibility.md)。
-序列化 jtreg、JMH 的具体测试命令见
-[任务 2.1 基准报告](docs/reports/task-2.1-serialization-baseline.md) 与
-[JMH 程序说明](apps/serialization-jmh/README.md)。
+release 性能基准应使用“快速开始”中的统一 Make 命令，具体测试选择和参数见
+[任务 2.1 基准报告](docs/reports/task-2.1-serialization-baseline.md)。
 
 参考：
 
