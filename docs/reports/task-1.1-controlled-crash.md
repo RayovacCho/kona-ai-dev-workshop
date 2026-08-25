@@ -15,7 +15,7 @@ JVM 参数与错误日志位置，批量脚本保证不同编号在独立进程�
 - 作业库：`apps/controlled-crash/`
 
 JDK 侧改动以独立 Kona fork 的
-[实现提交](https://github.com/Tencent/TencentKona-25/commit/3dfb920595202df2dfa5b9f5b6c3b124cf32aabf)
+[实现提交](https://github.com/RayovacCho/TencentKona-25/commit/3dfb920595202df2dfa5b9f5b6c3b124cf32aabf)
 为准，本仓库不重复保存补丁文件。
 
 ## 验证记录
@@ -37,9 +37,11 @@ JDK 侧改动以独立 Kona fork 的
 复现命令：
 
 ```bash
-cd /Users/rayovac9/kona-ai-dev-workshop/apps/controlled-crash
-export JAVA_HOME=/Users/rayovac9/TencentKona-25/build/macosx-aarch64-server-fastdebug/images/jdk
+export WORKSHOP_ROOT=/path/to/kona-ai-dev-workshop
+export KONA_SRC=/path/to/TencentKona-25
+export JAVA_HOME="$KONA_SRC/build/macosx-aarch64-server-fastdebug/images/jdk"
 export PATH="$JAVA_HOME/bin:$PATH"
+cd "$WORKSHOP_ROOT/apps/controlled-crash"
 ./build.sh
 ./test-crashes.sh
 ```
@@ -47,7 +49,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 WhiteBox 接口的 jtreg 回归测试：
 
 ```bash
-cd /Users/rayovac9/TencentKona-25
+cd "$KONA_SRC"
 make test CONF=macosx-aarch64-server-fastdebug \
     TEST=test/hotspot/jtreg/runtime/whitebox/ControlledCrashTest.java
 ```

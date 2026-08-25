@@ -7,7 +7,7 @@ if [[ $# -ne 1 || ! $1 =~ ^-?[0-9]+$ ]]; then
 fi
 
 APP_DIR=$(cd "$(dirname "$0")" && pwd)
-JAVA_HOME=${JAVA_HOME:-/Users/rayovac9/TencentKona-25/build/macosx-aarch64-server-fastdebug/images/jdk}
+: "${JAVA_HOME:?请设置 JAVA_HOME，指向 Kona fastdebug JDK 镜像}"
 LOG_DIR=${LOG_DIR:-"$APP_DIR/crash-logs"}
 JAR="$APP_DIR/build/controlled-crash.jar"
 

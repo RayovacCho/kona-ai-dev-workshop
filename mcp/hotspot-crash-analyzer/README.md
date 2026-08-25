@@ -20,7 +20,7 @@ JBS 关键词查询，防止把普通 SIGSEGV/SIGFPE 问题误认为本次受控
     "hotspot-crash-analyzer": {
       "command": "python3",
       "args": [
-        "/Users/rayovac9/kona-ai-dev-workshop/mcp/hotspot-crash-analyzer/server.py"
+        "/path/to/kona-ai-dev-workshop/mcp/hotspot-crash-analyzer/server.py"
       ]
     }
   }
@@ -36,6 +36,6 @@ JBS 关键词查询，防止把普通 SIGSEGV/SIGFPE 问题误认为本次受控
 `apps/controlled-crash/crash-logs/` 下被忽略的完整日志。
 
 ```bash
-cd /Users/rayovac9/kona-ai-dev-workshop/mcp/hotspot-crash-analyzer
+cd /path/to/kona-ai-dev-workshop/mcp/hotspot-crash-analyzer
 python3 -m unittest discover -s tests -v
 ```

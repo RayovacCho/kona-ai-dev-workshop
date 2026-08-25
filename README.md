@@ -16,6 +16,7 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 | 总规划与进度 | [docs/](docs/) |
 | 崩溃分析、JMH 等报告 | [docs/reports/](docs/reports/) |
 | 触发 JVM 崩溃的小程序、JMH 程序 | [apps/](apps/) |
+| 正式机器可读基准结果 | [results/](results/) |
 | 崩溃分析智能体技能 | [skills/](skills/) |
 | 崩溃分析 MCP 服务器 | [mcp/](mcp/) |
 
@@ -33,7 +34,7 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 - 测试多种崩溃类型，收集 HotSpot Error Log（`hs_err_pid*.log`）
 
 相关位置：`apps/`（触发程序）以及 Kona fork 上的
-[实现提交](https://github.com/Tencent/TencentKona-25/commit/3dfb920595202df2dfa5b9f5b6c3b124cf32aabf)。
+[实现提交](https://github.com/RayovacCho/TencentKona-25/commit/3dfb920595202df2dfa5b9f5b6c3b124cf32aabf)。
 
 ### 1.2 利用 AI 分析 JVM 崩溃
 
@@ -77,11 +78,12 @@ kona-ai-dev-workshop/
 ├── docs/                  ← 规划、步骤说明
 │   └── reports/           ← 崩溃分析、JMH 对比等报告
 ├── apps/                  ← 崩溃触发程序、JMH 等独立小项目
+├── results/               ← 正式 JSON、环境清单和校验和
 ├── skills/                ← 智能体技能（如 SKILL.md）
 └── mcp/                   ← MCP 服务器源码
 ```
 
-各目录会随作业推进逐步填入文件。尚未完成的部分在对应文档中用 TODO 标明。
+各目录会随作业推进逐步填入文件，任务状态以本文末尾的进度表和对应报告为准。
 
 ---
 
@@ -91,20 +93,23 @@ kona-ai-dev-workshop/
 |------|--------|
 | 规划、报告、技能、MCP、小工具 | **本仓库**（给导师看） |
 | WhiteBox、`java.io` 序列化等 JDK 修改 | **Kona 个人分支**（完整源码与构建） |
-| fastdebug 构建产物、`hs_err` 全文、JMH 原始超大输出 | **不提交**；报告里只放摘要和关键数字 |
+| 构建产物、依赖 JAR、`hs_err` 全文和临时日志 | **不提交** |
+| 正式 JMH JSON 与环境清单 | **提交**到 `results/`，保证结果可审计 |
 
 ---
 
 ## 环境与构建（Kona）
 
-在 Kona 源码树中构建 fastdebug（具体依赖以官方文档为准）：
+所有脚本使用环境变量，不依赖个人目录。以 fastdebug 构建为例：
 
 ```bash
-cd /Users/rayovac9/TencentKona-25
+export KONA_SRC=/path/to/TencentKona-25
+cd "$KONA_SRC"
 bash configure --with-debug-level=fastdebug
 make images
 ```
 
+完整规则与统一命令见[构建与基准复现约定](docs/reproducibility.md)。
 序列化 jtreg、JMH 的具体测试命令见
 [任务 2.1 基准报告](docs/reports/task-2.1-serialization-baseline.md) 与
 [JMH 程序说明](apps/serialization-jmh/README.md)。
@@ -113,6 +118,7 @@ make images
 
 - [Tencent Kona JDK 25](https://github.com/Tencent/TencentKona-25)  
 - [Kona Wiki](https://github.com/Tencent/TencentKona-25/wiki)
+- [MIT License](LICENSE)
 
 ---
 

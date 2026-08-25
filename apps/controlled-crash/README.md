@@ -9,9 +9,11 @@
 先完成 Kona fastdebug 构建，然后使用该构建中的 `javac`、`jar` 和 `java`：
 
 ```bash
-cd /Users/rayovac9/kona-ai-dev-workshop/apps/controlled-crash
-export JAVA_HOME=/Users/rayovac9/TencentKona-25/build/macosx-aarch64-server-fastdebug/images/jdk
+export WORKSHOP_ROOT=/path/to/kona-ai-dev-workshop
+export KONA_SRC=/path/to/TencentKona-25
+export JAVA_HOME="$KONA_SRC/build/macosx-aarch64-server-fastdebug/images/jdk"
 export PATH="$JAVA_HOME/bin:$PATH"
+cd "$WORKSHOP_ROOT/apps/controlled-crash"
 ./build.sh
 ./run-crash.sh 14
 ```

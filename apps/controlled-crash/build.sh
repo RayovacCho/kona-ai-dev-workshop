@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-KONA_SRC=${KONA_SRC:-/Users/rayovac9/TencentKona-25}
+: "${KONA_SRC:?请设置 KONA_SRC，指向 TencentKona-25 源码树}"
 APP_DIR=$(cd "$(dirname "$0")" && pwd)
 OUT="$APP_DIR/build"
 

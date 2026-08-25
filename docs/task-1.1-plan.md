@@ -31,7 +31,8 @@ ControlledCrash.main
 2. 配置并构建 fastdebug：
 
    ```bash
-   cd /Users/rayovac9/TencentKona-25
+   export KONA_SRC=/path/to/TencentKona-25
+   cd "$KONA_SRC"
    bash configure --with-debug-level=fastdebug
    make images
    ```
