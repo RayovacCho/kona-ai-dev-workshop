@@ -30,7 +30,8 @@ jmh-build:
 
 verify-clean-kona:
 	@test -n "$(KONA_SRC)" || { echo "请设置 KONA_SRC" >&2; exit 2; }
-	@test -d "$(KONA_SRC)/.git" || { echo "KONA_SRC 不是 Git 工作树：$(KONA_SRC)" >&2; exit 2; }
+	@test "$$(git -C "$(KONA_SRC)" rev-parse --is-inside-work-tree 2>/dev/null)" = true || { \
+	  echo "KONA_SRC 不是 Git 工作树：$(KONA_SRC)" >&2; exit 2; }
 	@test -z "$$(git -C "$(KONA_SRC)" status --porcelain)" || { \
 	  echo "拒绝在含未提交修改的 Kona 工作树上生成正式基准：$(KONA_SRC)" >&2; \
 	  git -C "$(KONA_SRC)" status --short >&2; exit 2; }

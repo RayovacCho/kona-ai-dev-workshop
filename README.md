@@ -103,8 +103,10 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 - 用 Codex 分析与基准的差异  
 - 根据分析做下一轮改进  
 
-后续优化继续复用同一套 [JMH 程序](apps/serialization-jmh/README.md)和
-[复现约定](docs/reproducibility.md)，源码改动进入 Kona fork，分析结论进入 `docs/reports/`。
+已完成：[实验规划](docs/task-2.3-plan.md)、
+[完整分析报告](docs/reports/task-2.3-serialization-followup.md)和
+[最终机器可读结果](results/task-2.3-final/README.md)。中间候选的正式结果也保存在
+`results/task-2.3-round1/` 至 `task-2.3-round3/`，用于审计 Codex 的改进依据。
 
 ---
 
@@ -177,7 +179,7 @@ release 性能基准应使用“快速开始”中的统一 Make 命令，具体
 | 1.2 Error Log 分析 + JBS 关联 + Skill / MCP | 已完成（[报告](docs/reports/task-1.2-ai-crash-analysis.md) / [Skill](skills/hotspot-crash-analysis/SKILL.md) / [MCP](mcp/hotspot-crash-analyzer/README.md)） |
 | 2.1 jtreg / JMH 基准 | 已完成（[报告](docs/reports/task-2.1-serialization-baseline.md) / [JMH](apps/serialization-jmh/README.md)） |
 | 2.2 Codex 方案与实现 | 已完成（[规划](docs/task-2.2-plan.md) / [报告](docs/reports/task-2.2-codex-serialization-optimization.md)） |
-| 2.3 JMH 对比与再优化 | 未开始 |
+| 2.3 JMH 对比与再优化 | 已完成（[规划](docs/task-2.3-plan.md) / [报告](docs/reports/task-2.3-serialization-followup.md) / [结果](results/task-2.3-final/README.md)） |
 
 完成一项后把上表改为「进行中」或「已完成」，并在 `docs/` 中补对应文档链接。
 

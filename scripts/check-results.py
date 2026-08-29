@@ -2,10 +2,17 @@
 import hashlib
 import json
 from pathlib import Path
+from typing import Optional
 
 
 ROOT = Path(__file__).resolve().parent.parent
-RESULT_DIR = ROOT / "results" / "task-2.1-baseline"
+RESULT_DIRS = (
+    ROOT / "results" / "task-2.1-baseline",
+    ROOT / "results" / "task-2.3-round1",
+    ROOT / "results" / "task-2.3-round2",
+    ROOT / "results" / "task-2.3-round3",
+    ROOT / "results" / "task-2.3-final",
+)
 REQUIRED_ENV = {
     "os",
     "architecture",
@@ -29,6 +36,7 @@ BENCHMARK_SOURCE = (
 )
 DEPENDENCY_LOCK = ROOT / "apps" / "serialization-jmh" / "dependencies.sha256"
 BASELINE_REPORT = ROOT / "docs" / "reports" / "task-2.1-serialization-baseline.md"
+FINAL_REPORT = ROOT / "docs" / "reports" / "task-2.3-serialization-followup.md"
 
 
 def sha256(path: Path) -> str:
@@ -39,19 +47,19 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def check_checksums() -> None:
-    checksum_file = RESULT_DIR / "SHA256SUMS"
+def check_checksums(result_dir: Path) -> None:
+    checksum_file = result_dir / "SHA256SUMS"
     for line in checksum_file.read_text(encoding="utf-8").splitlines():
         expected, name = line.split(maxsplit=1)
-        path = RESULT_DIR / name.lstrip("*")
+        path = result_dir / name.lstrip("*")
         actual = sha256(path)
         if actual != expected:
             raise SystemExit(f"校验和不匹配：{path}")
 
 
-def check_environment() -> None:
+def check_environment(result_dir: Path) -> None:
     values = {}
-    for line in (RESULT_DIR / "environment.txt").read_text(encoding="utf-8").splitlines():
+    for line in (result_dir / "environment.txt").read_text(encoding="utf-8").splitlines():
         key, separator, value = line.partition("=")
         if separator:
             values[key] = value
@@ -66,8 +74,8 @@ def check_environment() -> None:
         raise SystemExit("依赖锁定文件与正式基准记录不一致")
 
 
-def check_jmh() -> None:
-    with (RESULT_DIR / "jmh-result.json").open(encoding="utf-8") as stream:
+def check_jmh(result_dir: Path, report_path: Optional[Path] = None) -> None:
+    with (result_dir / "jmh-result.json").open(encoding="utf-8") as stream:
         results = json.load(stream)
     expected = {
         (operation, payload)
@@ -80,7 +88,7 @@ def check_jmh() -> None:
     }
     if actual != expected or len(results) != len(expected):
         raise SystemExit(f"JMH 结果矩阵不符合预期：{sorted(actual)}")
-    report = BASELINE_REPORT.read_text(encoding="utf-8")
+    report = report_path.read_text(encoding="utf-8") if report_path else None
     for entry in results:
         expected_configuration = {
             "mode": "avgt",
@@ -106,14 +114,19 @@ def check_jmh() -> None:
             f"{entry['primaryMetric']['scoreError']:.3f}"
         )
         displayed_allocation = f"{allocation['score']:,.0f}"
-        if displayed_score not in report:
+        if report is not None and displayed_score not in report:
             raise SystemExit(f"报告中缺少 JMH 分数：{displayed_score}")
-        if displayed_allocation not in report:
+        if report is not None and displayed_allocation not in report:
             raise SystemExit(f"报告中缺少分配量分数：{displayed_allocation}")
 
 
 if __name__ == "__main__":
-    check_checksums()
-    check_environment()
-    check_jmh()
-    print("正式基准产物：检查通过")
+    reports = {
+        "task-2.1-baseline": BASELINE_REPORT,
+        "task-2.3-final": FINAL_REPORT,
+    }
+    for result_dir in RESULT_DIRS:
+        check_checksums(result_dir)
+        check_environment(result_dir)
+        check_jmh(result_dir, reports.get(result_dir.name))
+    print(f"正式基准产物：{len(RESULT_DIRS)} 组检查通过")

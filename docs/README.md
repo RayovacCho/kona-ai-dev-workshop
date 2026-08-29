@@ -7,3 +7,5 @@
 - [任务 2.1 基准报告](reports/task-2.1-serialization-baseline.md)
 - [任务 2.2 优化规划](task-2.2-plan.md)
 - [任务 2.2 优化报告](reports/task-2.2-codex-serialization-optimization.md)
+- [任务 2.3 两轮优化规划](task-2.3-plan.md)
+- [任务 2.3 JMH 对比与进一步优化报告](reports/task-2.3-serialization-followup.md)
