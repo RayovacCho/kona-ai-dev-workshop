@@ -10,6 +10,103 @@
 公开 REST API 查询以及建议生成。二者明确区分“搜索候选”和“确认匹配”，避免仅凭
 SIGSEGV 等宽泛关键词错误关联。
 
+## Codex 实验过程（输入与输出）
+
+### 1. 实验输入
+
+2026-08-30 在仓库根目录使用 Codex 检查并分析本地完整日志。给 Codex 的任务要求为：
+
+```text
+分析 apps/controlled-crash/crash-logs/hs_err_pid*.log。每种 controlledCrash 类型选择一份
+日志，提取错误类型、错误消息或信号、Problematic frame 和受控崩溃调用链；判断直接原因、
+是否为人为注入以及结论置信度。不要仅根据 SIGSEGV/SIGFPE 关联 JBS；最后把实际输入、
+输出和分析结论写入 docs/reports/task-1.2-ai-crash-analysis.md。
+```
+
+日志目录中共有 21 份完整日志，即 7 个用例的三轮运行。本次选择第一轮连续生成的 7 份
+日志作为输入，分别对应编号 1、2、14、15、16、17 和 99：
+
+```text
+apps/controlled-crash/crash-logs/hs_err_pid16569.log
+apps/controlled-crash/crash-logs/hs_err_pid16574.log
+apps/controlled-crash/crash-logs/hs_err_pid16579.log
+apps/controlled-crash/crash-logs/hs_err_pid16584.log
+apps/controlled-crash/crash-logs/hs_err_pid16589.log
+apps/controlled-crash/crash-logs/hs_err_pid16594.log
+apps/controlled-crash/crash-logs/hs_err_pid16599.log
+```
+
+Codex 先用以下命令查看每份日志的致命错误头。该步骤直接读取完整 `hs_err`，没有使用测试
+fixture 或手工构造数据：
+
+```bash
+for f in apps/controlled-crash/crash-logs/hs_err_pid165{69,74,79,84,89,94,99}.log; do
+  printf '\nFILE %s\n' "$f"
+  rg -n -m1 \
+    'assert\(|guarantee\(|SIGSEGV|SIGFPE|Force crash|Crashing with number' "$f"
+done
+```
+
+输入日志的关键行输出如下：
+
+```text
+hs_err_pid16569.log:5: assert(how == 0) failed: test assert
+hs_err_pid16574.log:5: guarantee(how == 0) failed: test guarantee
+hs_err_pid16579.log:4: SIGSEGV (0xb) ... pid=16579
+hs_err_pid16584.log:4: SIGFPE (0x8) ... pid=16584
+hs_err_pid16589.log:5: fatal error: Force crash with an active ThreadsListHandle.
+hs_err_pid16594.log:5: fatal error: Force crash with a nested ThreadsListHandle.
+hs_err_pid16599.log:5: fatal error: Crashing with number 99
+```
+
+### 2. Codex 分析方法
+
+Codex 调用仓库内 `mcp/hotspot-crash-analyzer/analyzer.py` 的 `parse_log_file` 逐份解析完整
+日志，并同时检查原始文本中的 `WhiteBox.controlledCrash`、`WB_ControlledCrash`、
+`VMError::controlled_crash` 和 `-XX:+WhiteBoxAPI`。解析器负责确定性提取，Codex 负责把
+结构化证据与实验触发方式结合起来作最终判断。可用下面的最小 Python 调用复现单份输入：
+
+```python
+from analyzer import parse_log_file
+
+result = parse_log_file(
+    "../../apps/controlled-crash/crash-logs/hs_err_pid16579.log"
+)
+print(result["error"])
+print(result["problematic_frame"])
+print(result["controlled_crash"])
+print(result["direct_cause"])
+```
+
+判断顺序为：致命错误头决定原始错误类型；`Problematic frame` 和 VM/Java 栈确定发生位置；
+WhiteBox 调用链与 JVM 参数确定是否为受控注入；只有排除受控测试后，才把 JBS 搜索结果
+作为可能的产品缺陷候选。
+
+### 3. 实际输出
+
+Codex 得到的结构化摘要如下。地址等与进程相关的字段已省略，但错误类型、消息、问题帧和
+判断结果均保持原始输出内容：
+
+```json
+[
+  {"file":"hs_err_pid16569.log","kind":"assertion","message":"assert(how == 0) failed: test assert","controlled_crash":true,"cause":"有意触发的 WhiteBox 受控崩溃触发了 HotSpot assertion 错误","confidence":"high","intentional":true},
+  {"file":"hs_err_pid16574.log","kind":"guarantee","message":"guarantee(how == 0) failed: test guarantee","controlled_crash":true,"cause":"有意触发的 WhiteBox 受控崩溃触发了 HotSpot guarantee 错误","confidence":"high","intentional":true},
+  {"file":"hs_err_pid16579.log","kind":"signal","signal":"SIGSEGV","problematic_frame":"V [libjvm.dylib+0x14b4304] VMError::controlled_crash(int)+0x58","controlled_crash":true,"cause":"有意触发的 WhiteBox 受控崩溃引发了 SIGSEGV","confidence":"high","intentional":true},
+  {"file":"hs_err_pid16584.log","kind":"signal","signal":"SIGFPE","problematic_frame":"C [libsystem_kernel.dylib+0x95e8] __pthread_kill+0x8","controlled_crash":true,"cause":"有意触发的 WhiteBox 受控崩溃引发了 SIGFPE","confidence":"high","intentional":true},
+  {"file":"hs_err_pid16589.log","kind":"fatal","message":"fatal error: Force crash with an active ThreadsListHandle.","controlled_crash":true,"cause":"有意触发的 WhiteBox 受控崩溃触发了 HotSpot fatal 错误","confidence":"high","intentional":true},
+  {"file":"hs_err_pid16594.log","kind":"fatal","message":"fatal error: Force crash with a nested ThreadsListHandle.","controlled_crash":true,"cause":"有意触发的 WhiteBox 受控崩溃触发了 HotSpot fatal 错误","confidence":"high","intentional":true},
+  {"file":"hs_err_pid16599.log","kind":"fatal","message":"fatal error: Crashing with number 99","controlled_crash":true,"cause":"有意触发的 WhiteBox 受控崩溃触发了 HotSpot fatal 错误","confidence":"high","intentional":true}
+]
+```
+
+### 4. Codex 输出结论
+
+Codex 的最终判读是：7 份日志分别记录预期的 assertion、guarantee、SIGSEGV、SIGFPE 和
+三种 fatal 分支；它们都包含受控崩溃证据，且均来自启用了 WhiteBoxAPI 的隔离测试进程。
+因此 `intentional=true`、置信度为 `high`，不应把这些日志报告为 Kona/OpenJDK 的未知产品
+缺陷。编号 14 的 `VMError::controlled_crash` 问题帧是最直接的证据；编号 15 在 macOS 上
+显示 `__pthread_kill`，但致命错误头和调用链仍表明原始事件是测试主动触发的 SIGFPE。
+
 ## 样本分析结论
 
 对 1.1 七类日志各取一份分析，直接原因如下：
