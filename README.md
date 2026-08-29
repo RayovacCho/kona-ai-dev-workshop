@@ -94,6 +94,9 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 - 规划优化方案（写入 `docs/`）  
 - 在 Kona 源码中实现（主要涉及 `java.io` 序列化路径），并跑测试  
 
+已完成：[优化规划](docs/task-2.2-plan.md)和
+[实现与测试报告](docs/reports/task-2.2-codex-serialization-optimization.md)。
+
 ### 2.3 进一步改进
 
 - 对优化后的实现再跑 JMH，得到优化后性能  
@@ -173,7 +176,7 @@ release 性能基准应使用“快速开始”中的统一 Make 命令，具体
 | 1.1 WhiteBox `controlledCrash` + 触发程序 + 崩溃测试 | 已完成（[规划](docs/task-1.1-plan.md) / [报告](docs/reports/task-1.1-controlled-crash.md)） |
 | 1.2 Error Log 分析 + JBS 关联 + Skill / MCP | 已完成（[报告](docs/reports/task-1.2-ai-crash-analysis.md) / [Skill](skills/hotspot-crash-analysis/SKILL.md) / [MCP](mcp/hotspot-crash-analyzer/README.md)） |
 | 2.1 jtreg / JMH 基准 | 已完成（[报告](docs/reports/task-2.1-serialization-baseline.md) / [JMH](apps/serialization-jmh/README.md)） |
-| 2.2 Codex 方案与实现 | 未开始 |
+| 2.2 Codex 方案与实现 | 已完成（[规划](docs/task-2.2-plan.md) / [报告](docs/reports/task-2.2-codex-serialization-optimization.md)） |
 | 2.3 JMH 对比与再优化 | 未开始 |
 
 完成一项后把上表改为「进行中」或「已完成」，并在 `docs/` 中补对应文档链接。
