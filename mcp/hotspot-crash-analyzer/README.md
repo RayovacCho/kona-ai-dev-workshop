@@ -33,7 +33,9 @@ JBS 关键词查询，防止把普通 SIGSEGV/SIGFPE 问题误认为本次受控
 ## 验证
 
 测试使用 `tests/fixtures/` 中随仓库提交的精简 `hs_err` 样本，不依赖本机
-`apps/controlled-crash/crash-logs/` 下被忽略的完整日志。
+`apps/controlled-crash/crash-logs/` 下被忽略的完整日志。覆盖受控崩溃、非受控原生库
+SIGSEGV、JBS 搜索/详情响应解析和 MCP stdio 调用；JBS 响应使用确定性 mock，因此 CI
+不依赖外部网络。
 
 ```bash
 cd /path/to/kona-ai-dev-workshop/mcp/hotspot-crash-analyzer

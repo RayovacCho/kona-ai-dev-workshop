@@ -94,8 +94,9 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 - 规划优化方案（写入 `docs/`）  
 - 在 Kona 源码中实现（主要涉及 `java.io` 序列化路径），并跑测试  
 
-已完成：[优化规划](docs/task-2.2-plan.md)和
-[实现与测试报告](docs/reports/task-2.2-codex-serialization-optimization.md)。
+已完成：[优化规划](docs/task-2.2-plan.md)、
+[实现与测试报告](docs/reports/task-2.2-codex-serialization-optimization.md)和
+[Kona PR #1](https://github.com/RayovacCho/TencentKona-25/pull/1)。
 
 ### 2.3 进一步改进
 

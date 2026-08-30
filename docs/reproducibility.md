@@ -20,8 +20,13 @@
 5. 基准前后使用相同硬件、JMH 参数、数据模型和 JDK 配置；
 6. JMH 至少 3 forks、5 次预热、5 次测量，并记录 `-prof gc` 分配指标；
 7. 正确性 jtreg 全部通过后，性能结果才可作为优化结论。
+8. 所有正式 JMH 只使用 `$KONA_SRC/build/$KONA_CONF/images/jdk`，不得与构建树中的
+   exploded `jdk` 混用；`release` 文件中的 `SOURCE` 修订必须匹配 Kona HEAD；
+9. 严格比较耗时时，基线与候选还必须使用相同 OS 版本和 JVM 镜像形式。
 
-根目录 `Makefile` 会拒绝在 dirty Kona 工作树上生成正式结果。
+根目录 `Makefile` 会拒绝 dirty Kona 工作树、错误的 `KONA_HOME`，以及源码修订不匹配的
+JDK 镜像。环境清单 schema 2 同时记录 `release`、`bin/java` 和 `lib/modules` 的 SHA-256，
+将源码提交与被测产物绑定起来。
 
 ## 环境变量
 
@@ -52,6 +57,9 @@ make check-results
 `RESULT_DIR=results/<新目录> make benchmark` 会依次构建镜像、跑 jtreg、执行带 GC
 profiler 的正式 JMH，并采集环境。目标默认拒绝覆盖已有结果；只有明确重建同一基准时才
 使用 `ALLOW_BASELINE_OVERWRITE=1`。
+
+`make check-results` 会递归发现 `results/` 下的正式结果和新增复现实验，要求校验和清单
+恰好包含 `jmh-result.json` 与 `environment.txt`，并验证 JMH 使用的 JVM 与环境清单一致。
 
 ## 结果解释
 

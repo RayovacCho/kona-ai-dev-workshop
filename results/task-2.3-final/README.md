@@ -10,3 +10,7 @@
 主要结果：GRAPH 序列化为 `5.682 ± 0.151 us/op`、`16,320 B/op`；相对基线分配减少
 2,344 B/op（12.56%），耗时置信区间重叠。完整解释见
 [任务 2.3 报告](../../docs/reports/task-2.3-serialization-followup.md)。
+
+审计说明：该历史轮次使用构建树中的 exploded `jdk`，而任务 2.1 基线使用
+`images/jdk`，且两轮 macOS 小版本不同。分配量结论保留；跨轮耗时只作为观测值。
+修正后的自动化已强制后续正式实验使用与 Kona HEAD 匹配的 `images/jdk` 并记录产物哈希。

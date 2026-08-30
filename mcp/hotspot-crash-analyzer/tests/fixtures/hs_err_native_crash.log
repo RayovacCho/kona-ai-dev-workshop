@@ -1,0 +1,29 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007f1234567890, pid=4242, tid=4243
+#
+# JRE version: OpenJDK Runtime Environment (25.0.4) (build 25.0.4+8)
+# Java VM: OpenJDK 64-Bit Server VM (25.0.4+8, mixed mode, linux-amd64)
+# Problematic frame:
+# C  [libexample.so+0x1234]  crash_in_native_library+0x4
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -Dexample=true workshop.NativeApplication
+
+Host: Linux amd64
+Time: Sun Aug 30 12:00:00 2026 UTC elapsed time: 2.500 seconds
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00007f1200001000):  JavaThread "main" [_thread_in_native]
+
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+C  [libexample.so+0x1234]  crash_in_native_library+0x4
+j  workshop.NativeApplication.callNative()V+0
+
+Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)
+j  workshop.NativeApplication.callNative()V+0
+j  workshop.NativeApplication.main([Ljava/lang/String;)V+3

@@ -26,6 +26,31 @@ if [[ -n "$(git -C "$KONA_SRC" status --porcelain)" ]]; then
   exit 2
 fi
 
+kona_root=$(cd "$KONA_SRC" && pwd -P)
+kona_home=$(cd "$KONA_HOME" && pwd -P)
+expected_home="$kona_root/build/${KONA_CONF:-macosx-aarch64-server-release}/images/jdk"
+if [[ "$kona_home" != "$expected_home" ]]; then
+  echo "正式基准必须使用当前 KONA_SRC 的 images/jdk" >&2
+  echo "期望：$expected_home" >&2
+  echo "实际：$kona_home" >&2
+  exit 2
+fi
+
+kona_commit=$(git -C "$KONA_SRC" rev-parse HEAD)
+kona_revision=${kona_commit:0:12}
+release_file="$kona_home/release"
+modules_file="$kona_home/lib/modules"
+[[ -x "$kona_home/bin/java" ]] || { echo "缺少 $kona_home/bin/java" >&2; exit 2; }
+[[ -f "$release_file" ]] || { echo "缺少 $release_file" >&2; exit 2; }
+[[ -f "$modules_file" ]] || { echo "缺少 $modules_file" >&2; exit 2; }
+jdk_source=$(sed -n 's/^SOURCE="\(.*\)"$/\1/p' "$release_file")
+if [[ "$jdk_source" != *"git:$kona_revision"* ]]; then
+  echo "JDK release 中的源码修订与 Kona HEAD 不一致" >&2
+  echo "Kona HEAD：$kona_revision" >&2
+  echo "JDK SOURCE：$jdk_source" >&2
+  exit 2
+fi
+
 os_name=$(uname -s)
 os_version=$(uname -r)
 if command -v sw_vers >/dev/null 2>&1; then
@@ -47,13 +72,19 @@ elif command -v lscpu >/dev/null 2>&1; then
 fi
 
 {
+  echo "environment_schema=2"
   echo "captured_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "os=$os_name $os_version"
   echo "architecture=$(uname -m)"
   echo "cpu=$cpu"
   echo "memory=$memory"
-  echo "kona_commit=$(git -C "$KONA_SRC" rev-parse HEAD)"
+  echo "kona_commit=$kona_commit"
   echo "kona_worktree=clean"
+  echo "kona_home=$kona_home"
+  echo "jdk_source_revision=$kona_revision"
+  echo "jdk_release_sha256=$(sha256 "$release_file")"
+  echo "java_executable_sha256=$(sha256 "$kona_home/bin/java")"
+  echo "modules_sha256=$(sha256 "$modules_file")"
   echo "jmh_version=1.37"
   echo "benchmark_source_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/src/workshop/serialization/JavaSerializationBenchmark.java")"
   echo "dependency_lock_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/dependencies.sha256")"

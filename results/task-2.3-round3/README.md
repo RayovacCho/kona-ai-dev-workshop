@@ -5,3 +5,7 @@
 
 目录包含完整九场景 JMH JSON、clean 提交环境清单和 SHA-256 校验和。详见
 [任务 2.3 报告](../../docs/reports/task-2.3-serialization-followup.md)。
+
+审计说明：该轮使用构建树中的 exploded `jdk`，Round 1/2 使用 `images/jdk`。因此跨镜像
+形式的微秒级耗时只作为候选筛选依据。修正后的自动化已强制后续正式实验统一使用与
+Kona HEAD 匹配的 `images/jdk`。

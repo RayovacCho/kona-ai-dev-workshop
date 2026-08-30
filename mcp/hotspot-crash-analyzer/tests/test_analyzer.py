@@ -1,15 +1,25 @@
+import io
 import json
 import subprocess
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 PROJECT = HERE.parent
 FIXTURES = HERE / "fixtures"
 sys.path.insert(0, str(PROJECT))
 
-from analyzer import AnalysisError, build_jql, parse_log_file, parse_log_text
+from analyzer import (
+    AnalysisError,
+    analyze_file,
+    build_jql,
+    get_jbs_issue,
+    parse_log_file,
+    parse_log_text,
+    search_jbs,
+)
 
 
 class AnalyzerTest(unittest.TestCase):
@@ -31,9 +41,78 @@ class AnalyzerTest(unittest.TestCase):
         with self.assertRaises(AnalysisError):
             parse_log_text("ordinary Java exception\n")
 
+    def test_non_controlled_native_crash_searches_jbs(self):
+        candidate = {
+            "query": "crash_in_native_library",
+            "issues": [{"key": "JDK-1234567"}],
+            "total": 1,
+        }
+        with mock.patch("analyzer.search_jbs", return_value=candidate) as search:
+            result = analyze_file(str(FIXTURES / "hs_err_native_crash.log"))
+        self.assertFalse(result["controlled_crash"])
+        self.assertEqual("C", result["problematic_frame"]["kind"])
+        self.assertIn("crash_in_native_library", result["direct_cause"]["summary"])
+        self.assertTrue(result["jbs"]["searched"])
+        self.assertEqual("JDK-1234567", result["jbs"]["issues"][0]["key"])
+        search.assert_called_once()
+
     def test_jql_escapes_input(self):
         jql = build_jql('foo "bar" \\ baz')
         self.assertIn('foo \\"bar\\" \\\\ baz', jql)
+
+    @staticmethod
+    def _response(payload):
+        response = mock.MagicMock()
+        response.__enter__.return_value = io.BytesIO(json.dumps(payload).encode())
+        return response
+
+    @mock.patch("analyzer.urllib.request.urlopen")
+    def test_search_jbs_parses_candidate(self, urlopen):
+        urlopen.return_value = self._response(
+            {
+                "total": 1,
+                "issues": [
+                    {
+                        "key": "JDK-1234567",
+                        "fields": {
+                            "summary": "Native crash",
+                            "status": {"name": "Resolved"},
+                            "resolution": {"name": "Fixed"},
+                            "versions": [{"name": "25"}],
+                            "fixVersions": [{"name": "25.0.1"}],
+                            "components": [{"name": "hotspot"}],
+                            "updated": "2026-08-30T00:00:00Z",
+                        },
+                    }
+                ],
+            }
+        )
+        result = search_jbs("crash_in_native_library", max_results=1)
+        self.assertEqual(1, result["total"])
+        self.assertEqual("JDK-1234567", result["issues"][0]["key"])
+        self.assertEqual(["25.0.1"], result["issues"][0]["fix_versions"])
+
+    @mock.patch("analyzer.urllib.request.urlopen")
+    def test_get_jbs_issue_parses_metadata(self, urlopen):
+        urlopen.return_value = self._response(
+            {
+                "fields": {
+                    "summary": "Native crash",
+                    "status": {"name": "Resolved"},
+                    "resolution": {"name": "Fixed"},
+                    "description": "Crash description",
+                    "versions": [{"name": "25"}],
+                    "fixVersions": [{"name": "25.0.1"}],
+                    "components": [{"name": "hotspot"}],
+                    "labels": ["crash"],
+                    "issuelinks": [],
+                    "updated": "2026-08-30T00:00:00Z",
+                }
+            }
+        )
+        issue = get_jbs_issue("jdk-1234567")
+        self.assertEqual("JDK-1234567", issue["key"])
+        self.assertEqual("Fixed", issue["resolution"])
 
     def test_mcp_stdio(self):
         messages = [

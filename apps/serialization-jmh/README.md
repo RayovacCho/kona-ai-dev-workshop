@@ -31,6 +31,10 @@ KONA_HOME=/path/to/jdk ./run.sh -f 1 -wi 2 -i 3
 5 次预热和 5 次测量，每次 1 秒；结果以 `us/op` 输出，并保存到 `results/` 下的 JSON
 文件。`lib/`、`build/` 和普通试跑结果不提交版本库。
 
+`run.sh` 会在基准源码、构建脚本或依赖锁文件比现有 JAR 更新时自动重建，避免源码修改后
+误用旧基准产物。CI 使用 `make jmh-smoke` 编译并短时执行完整场景矩阵；正式数据仍只能由
+根目录的受控流程生成。
+
 正式基准使用根目录 `make jmh-baseline`，同时启用 GC profiler，并将 JSON 保存到
 版本控制中的 `results/`。任务 2.1 基线见
 [基准报告](../../docs/reports/task-2.1-serialization-baseline.md)，任务 2.3 的多轮对比、

@@ -3,7 +3,9 @@
 ## 结论
 
 任务 2.3 已完成两次正式对照和三次数据驱动的实现迭代。最终 Kona 提交为
-`cb9164b6b`。在最能体现本次写路径改动的 `GRAPH serialize` 场景中：
+`cb9164b6b`，提交审阅入口为
+[Kona PR #1](https://github.com/RayovacCho/TencentKona-25/pull/1)。在最能体现本次写路径
+改动的 `GRAPH serialize` 场景中：
 
 - 分配量从基线 **18,664 B/op** 降到 **16,320 B/op**，减少 **2,344 B/op
   （12.56%）**；
@@ -29,7 +31,7 @@
 
 Codex 先固定实验约束，再按“测量 → 分析 → 修改 → 正确性验证 → 复测”推进。完整规划见
 [任务 2.3 规划](../task-2.3-plan.md)。所有正式轮次都使用同一台 Apple M5 MacBook Air、
-同一 JMH 1.37 程序和以下参数：
+同一 JMH 1.37 程序和以下参数；历史产物中发现的 OS 与 JDK 镜像形式差异在下文单独披露：
 
 ```text
 Mode: AverageTime; Threads: 1; Forks: 3
@@ -41,13 +43,26 @@ Profiler: gc; 结果单位: us/op 与 B/op
 
 ```bash
 KONA_SRC=/Users/rayovac9/TencentKona-25-task-2.2 \
-KONA_HOME=/Users/rayovac9/TencentKona-25-task-2.2/build/macosx-aarch64-server-release/jdk \
-RESULT_DIR=results/task-2.3-final make jmh-baseline
+KONA_HOME=/Users/rayovac9/TencentKona-25-task-2.2/build/macosx-aarch64-server-release/images/jdk \
+RESULT_DIR=results/reproductions/task-2.3-final-YYYYMMDD make jmh-baseline
 
 KONA_SRC=/Users/rayovac9/TencentKona-25-task-2.2 \
-KONA_HOME=/Users/rayovac9/TencentKona-25-task-2.2/build/macosx-aarch64-server-release/jdk \
-RESULT_DIR=results/task-2.3-final make capture-environment
+KONA_HOME=/Users/rayovac9/TencentKona-25-task-2.2/build/macosx-aarch64-server-release/images/jdk \
+RESULT_DIR=results/reproductions/task-2.3-final-YYYYMMDD make capture-environment
 ```
+
+### 历史结果的环境差异与解释边界
+
+提交后审计发现，任务 2.1 基线运行于 macOS 26.5.1，任务 2.3 各轮运行于 macOS 26.6.2；
+此外，基线及 Round 1/2 使用 `images/jdk`，Round 3 与最终轮使用构建树中的 exploded
+`jdk`。原始 JSON 的 `jvm` 字段和环境文件完整保留了这一差异。因此，上述命令是修正后的
+统一复现命令，而不是对历史命令的逐字复述。
+
+这项差异不改变本报告的主要可确认结论：`GRAPH serialize` 的 B/op 下降与源码所消除的
+数组分配精确对应，SMALL/CUSTOM 的分配量也回到基线。不过，所有跨 2.1/2.3 的微秒级
+耗时差异都只能视为观测值，不能作为严格受控的加速或回退证据。仓库现在会强制使用当前
+Kona 工作树对应的 `images/jdk`，校验 JDK `SOURCE` 修订，并记录可执行文件和模块镜像
+哈希，防止新实验再次混用产物。
 
 正式输出为：
 

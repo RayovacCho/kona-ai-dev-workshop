@@ -20,4 +20,4 @@ jobs:
           distribution: temurin
           java-version: "25"
       - run: make check
-      - run: make jmh-build KONA_HOME="$JAVA_HOME"
+      - run: make jmh-smoke KONA_HOME="$JAVA_HOME"
