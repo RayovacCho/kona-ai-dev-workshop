@@ -26,11 +26,15 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 
 ## 快速开始
 
+仓库内的 Python 工具要求 **Python 3.6 或更高版本**，且不依赖第三方 Python 包。
 验证仓库内的脚本、MCP 测试和已提交的正式基准结果：
 
 ```bash
 make check
 ```
+
+默认使用 `python3`；如需指定解释器，执行
+`make check PYTHON=/path/to/python3`。
 
 在新的结果目录中完整复跑 Kona release 构建、序列化 jtreg 和 JMH：
 

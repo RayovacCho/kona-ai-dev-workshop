@@ -37,6 +37,16 @@ class AnalyzerTest(unittest.TestCase):
         self.assertIn("VMError::controlled_crash", result["problematic_frame"]["symbol"])
         self.assertEqual("V", result["problematic_frame"]["kind"])
 
+    def test_controlled_sigfpe_uses_exact_jbs_background_query(self):
+        result = analyze_file(str(FIXTURES / "hs_err_controlled_sigfpe.log"))
+        self.assertEqual("__pthread_kill+0x8", result["problematic_frame"]["symbol"])
+        self.assertEqual(["VMError::controlled_crash"], result["jbs_search_terms"])
+        self.assertIn("VMError%3A%3Acontrolled_crash", result["jbs_search_url"])
+        self.assertNotIn("__pthread_kill", result["jbs_search_url"])
+        self.assertFalse(result["jbs"]["searched"])
+        self.assertEqual(result["jbs_search_url"], result["jbs"]["browse_url"])
+        self.assertIn("历史背景", result["jbs"]["reason"])
+
     def test_rejects_non_hs_err(self):
         with self.assertRaises(AnalysisError):
             parse_log_text("ordinary Java exception\n")
@@ -134,8 +144,9 @@ class AnalyzerTest(unittest.TestCase):
         proc = subprocess.run(
             [sys.executable, str(PROJECT / "server.py")],
             input="".join(json.dumps(item) + "\n" for item in messages),
-            text=True,
-            capture_output=True,
+            universal_newlines=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             check=True,
         )
         responses = [json.loads(line) for line in proc.stdout.splitlines()]

@@ -9,8 +9,12 @@
 
 `analyze_hotspot_crash` 遇到 1.1 的 `VMError::controlled_crash` 测试日志时会主动跳过
 JBS 关键词查询，防止把普通 SIGSEGV/SIGFPE 问题误认为本次受控崩溃的根因。
+返回的 `browse_url` 仅搜索 `VMError::controlled_crash` 这一精确机制，
+作为可选的历史背景，不会使用 `__pthread_kill` 等通用顶帧。
 
 ## 配置
+
+运行时要求 **Python 3.6 或更高版本**，不需要第三方 Python 包。
 
 在支持 stdio MCP 的客户端中加入（按本机路径调整）：
 
@@ -41,3 +45,6 @@ SIGSEGV、JBS 搜索/详情响应解析和 MCP stdio 调用；JBS 响应使用�
 cd /path/to/kona-ai-dev-workshop/mcp/hotspot-crash-analyzer
 python3 -m unittest discover -s tests -v
 ```
+
+在仓库根目录也可执行 `make test-mcp`；如需指定解释器，使用
+`make test-mcp PYTHON=/path/to/python3`。

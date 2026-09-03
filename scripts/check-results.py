@@ -3,7 +3,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -98,7 +98,7 @@ def check_checksums(result_dir: Path) -> None:
             raise SystemExit(f"校验和不匹配：{path}")
 
 
-def check_environment(result_dir: Path) -> dict[str, str]:
+def check_environment(result_dir: Path) -> Dict[str, str]:
     values = {}
     for line in (result_dir / "environment.txt").read_text(encoding="utf-8").splitlines():
         key, separator, value = line.partition("=")
@@ -137,7 +137,7 @@ def check_environment(result_dir: Path) -> dict[str, str]:
 
 def check_jmh(
     result_dir: Path,
-    environment: dict[str, str],
+    environment: Dict[str, str],
     report_path: Optional[Path] = None,
 ) -> None:
     with (result_dir / "jmh-result.json").open(encoding="utf-8") as stream:

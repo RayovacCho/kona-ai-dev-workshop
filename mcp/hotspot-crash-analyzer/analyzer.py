@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """以确定性方式解析 HotSpot 错误日志并查询公开 JBS。"""
 
-from __future__ import annotations
-
 import json
 import re
 import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 MAX_LOG_BYTES = 10 * 1024 * 1024
 JBS_BASE = "https://bugs.openjdk.org"
@@ -19,7 +17,7 @@ class AnalysisError(ValueError):
     pass
 
 
-def _first(pattern: str, text: str, flags: int = re.MULTILINE) -> str | None:
+def _first(pattern: str, text: str, flags: int = re.MULTILINE) -> Optional[str]:
     match = re.search(pattern, text, flags)
     return match.group(1).strip() if match else None
 
@@ -29,8 +27,8 @@ def _section(text: str, start: str) -> str:
     return "" if begin < 0 else text[begin + len(start) :]
 
 
-def _frames(text: str, heading: str, limit: int = 20) -> list[str]:
-    result: list[str] = []
+def _frames(text: str, heading: str, limit: int = 20) -> List[str]:
+    result = []  # type: List[str]
     for line in _section(text, heading).splitlines():
         value = line.strip()
         if not value and result:
@@ -42,7 +40,7 @@ def _frames(text: str, heading: str, limit: int = 20) -> list[str]:
     return result
 
 
-def _problematic_frame(text: str) -> dict[str, str] | None:
+def _problematic_frame(text: str) -> Optional[Dict[str, str]]:
     raw = _first(r"^# Problematic frame:\s*\n#\s*(.+)$", text)
     if not raw:
         return None
@@ -56,7 +54,7 @@ def _problematic_frame(text: str) -> dict[str, str] | None:
     return result
 
 
-def _error_details(text: str) -> dict[str, Any]:
+def _error_details(text: str) -> Dict[str, Any]:
     signal_match = re.search(
         r"^#\s+(SIG[A-Z0-9]+|EXCEPTION_[A-Z_]+)\s+\(([^)]+)\) at pc=([^,]+), pid=(\d+), tid=(\d+)",
         text,
@@ -103,7 +101,7 @@ def _error_details(text: str) -> dict[str, Any]:
     return {"kind": "unknown", "message": message}
 
 
-def _advice(error: dict[str, Any], frame: dict[str, str] | None) -> list[str]:
+def _advice(error: Dict[str, Any], frame: Optional[Dict[str, str]]) -> List[str]:
     advice = ["在同一 JDK 系列最新的受支持更新版上复现，并保留完整的 hs_err 日志。"]
     frame_kind = frame.get("kind") if frame else None
     if error["kind"] == "signal" and frame_kind == "C":
@@ -116,8 +114,10 @@ def _advice(error: dict[str, Any], frame: dict[str, str] | None) -> list[str]:
     return advice
 
 
-def _direct_cause(error: dict[str, Any], frame: dict[str, str] | None, controlled: bool) -> dict[str, Any]:
-    evidence: list[str] = []
+def _direct_cause(
+    error: Dict[str, Any], frame: Optional[Dict[str, str]], controlled: bool
+) -> Dict[str, Any]:
+    evidence = []  # type: List[str]
     if error.get("message"):
         evidence.append(error["message"])
     if error.get("signal"):
@@ -159,8 +159,15 @@ def _direct_cause(error: dict[str, Any], frame: dict[str, str] | None, controlle
     }
 
 
-def _search_terms(error: dict[str, Any], frame: dict[str, str] | None) -> list[str]:
-    terms: list[str] = []
+def _search_terms(
+    error: Dict[str, Any], frame: Optional[Dict[str, str]], controlled: bool = False
+) -> List[str]:
+    # 受控崩溃的通用信号、libc 顶帧和测试消息并不是产品缺陷指纹。
+    # 如果调用方确实需要历史背景，只向它提供精确的受控崩溃机制查询。
+    if controlled:
+        return ["VMError::controlled_crash"]
+
+    terms = []  # type: List[str]
     message = error.get("message") or ""
     if message:
         cleaned = re.sub(r"^fatal error:\s*", "", message)
@@ -176,7 +183,7 @@ def _search_terms(error: dict[str, Any], frame: dict[str, str] | None) -> list[s
     return list(dict.fromkeys(term for term in terms if len(term) >= 3))[:3]
 
 
-def parse_log_text(text: str, source: str = "<content>") -> dict[str, Any]:
+def parse_log_text(text: str, source: str = "<content>") -> Dict[str, Any]:
     error = _error_details(text)
     frame = _problematic_frame(text)
     controlled = (
@@ -184,7 +191,7 @@ def parse_log_text(text: str, source: str = "<content>") -> dict[str, Any]:
         or "WhiteBox.controlledCrash" in text
         or ("-XX:+WhiteBoxAPI" in text and "workshop.crash.ControlledCrash" in text)
     )
-    terms = _search_terms(error, frame)
+    terms = _search_terms(error, frame, controlled)
     return {
         "schema_version": 1,
         "source": source,
@@ -206,7 +213,7 @@ def parse_log_text(text: str, source: str = "<content>") -> dict[str, Any]:
     }
 
 
-def parse_log_file(path: str) -> dict[str, Any]:
+def parse_log_file(path: str) -> Dict[str, Any]:
     log_path = Path(path).expanduser()
     if not log_path.is_file():
         raise AnalysisError(f"日志文件不存在或不是常规文件：{log_path}")
@@ -233,7 +240,7 @@ def build_jbs_browse_url(query: str) -> str:
     return f"{JBS_BASE}/issues/?jql={urllib.parse.quote(build_jql(query))}"
 
 
-def search_jbs(query: str, max_results: int = 5, timeout_seconds: float = 12.0) -> dict[str, Any]:
+def search_jbs(query: str, max_results: int = 5, timeout_seconds: float = 12.0) -> Dict[str, Any]:
     max_results = max(1, min(int(max_results), 20))
     jql = build_jql(query)
     params = urllib.parse.urlencode(
@@ -278,7 +285,7 @@ def search_jbs(query: str, max_results: int = 5, timeout_seconds: float = 12.0) 
     }
 
 
-def get_jbs_issue(key: str, timeout_seconds: float = 12.0) -> dict[str, Any]:
+def get_jbs_issue(key: str, timeout_seconds: float = 12.0) -> Dict[str, Any]:
     key = key.strip().upper()
     if not re.fullmatch(r"JDK-\d+", key):
         raise AnalysisError("JBS 问题编号的格式必须类似 JDK-1234567")
@@ -316,12 +323,12 @@ def get_jbs_issue(key: str, timeout_seconds: float = 12.0) -> dict[str, Any]:
     }
 
 
-def analyze_file(path: str, include_jbs: bool = True, max_results: int = 5) -> dict[str, Any]:
+def analyze_file(path: str, include_jbs: bool = True, max_results: int = 5) -> Dict[str, Any]:
     result = parse_log_file(path)
     if result["controlled_crash"]:
         result["jbs"] = {
             "searched": False,
-            "reason": "这是有意触发 VMError::controlled_crash 的测试样本；通用崩溃搜索结果会造成误报。",
+            "reason": "这是有意触发 VMError::controlled_crash 的测试样本；已跳过自动 JBS 搜索。browse_url 仅用于查看该精确机制的历史背景。",
             "issues": [],
             "browse_url": result["jbs_search_url"],
         }

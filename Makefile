@@ -1,4 +1,5 @@
 SHELL := /bin/bash
+PYTHON ?= python3
 
 KONA_CONF ?= macosx-aarch64-server-release
 KONA_HOME ?= $(if $(KONA_SRC),$(KONA_SRC)/build/$(KONA_CONF)/images/jdk,)
@@ -20,13 +21,13 @@ check: test-mcp test-results-validator check-results
 	@git diff --check
 
 test-mcp:
-	@python3 -m unittest discover -s mcp/hotspot-crash-analyzer/tests -v
+	@$(PYTHON) -m unittest discover -s mcp/hotspot-crash-analyzer/tests -v
 
 test-results-validator:
-	@python3 -m unittest discover -s scripts/tests -v
+	@$(PYTHON) -m unittest discover -s scripts/tests -v
 
 check-results:
-	@python3 scripts/check-results.py
+	@$(PYTHON) scripts/check-results.py
 
 jmh-build:
 	@test -n "$(KONA_HOME)" || { echo "请设置 KONA_HOME" >&2; exit 2; }

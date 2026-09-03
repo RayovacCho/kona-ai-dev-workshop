@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """用于 HotSpot 崩溃分析的零依赖 stdio MCP 服务器。"""
 
-from __future__ import annotations
-
 import json
 import sys
 import traceback
-from typing import Any
+from typing import Any, Dict, Optional
 
 from analyzer import AnalysisError, analyze_file, get_jbs_issue, parse_log_file, parse_log_text, search_jbs
 
@@ -66,15 +64,15 @@ TOOLS = [
 ]
 
 
-def _tool_result(data: Any, is_error: bool = False) -> dict[str, Any]:
+def _tool_result(data: Any, is_error: bool = False) -> Dict[str, Any]:
     text = json.dumps(data, ensure_ascii=False, indent=2)
-    result: dict[str, Any] = {"content": [{"type": "text", "text": text}], "isError": is_error}
+    result = {"content": [{"type": "text", "text": text}], "isError": is_error}  # type: Dict[str, Any]
     if not is_error and isinstance(data, dict):
         result["structuredContent"] = data
     return result
 
 
-def _call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+def _call_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     if name == "parse_hotspot_error_log":
         if bool(arguments.get("path")) == bool(arguments.get("content")):
             raise AnalysisError("path 和 content 必须且只能提供一个")
@@ -92,7 +90,7 @@ def _call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     raise AnalysisError(f"未知工具：{name}")
 
 
-def handle(message: dict[str, Any]) -> dict[str, Any] | None:
+def handle(message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     method = message.get("method")
     request_id = message.get("id")
     if request_id is None:
