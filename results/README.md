@@ -18,7 +18,7 @@
 - [Round 2](task-2.3-round2/README.md)
 - [Round 3](task-2.3-round3/README.md)
 
-这些目录保留用于追溯 Codex 的设计决策，但环境清单不满足当前 schema 2 的 JDK
+这些目录保留用于追溯 GPT-5.6 的设计决策，但环境清单不满足当前 schema 2 的 JDK
 二进制绑定规则，因此不用于当前正式性能结论。
 
 ## 新增复现实验

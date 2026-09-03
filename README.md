@@ -93,7 +93,7 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 [基准报告](docs/reports/task-2.1-serialization-baseline.md)和
 [机器可读结果](results/task-2.1-baseline/README.md)。
 
-### 2.2 使用 Codex 优化
+### 2.2 使用 GPT-5.6 优化
 
 - 规划优化方案（写入 `docs/`）  
 - 在 Kona 源码中实现（主要涉及 `java.io` 序列化路径），并跑测试  
@@ -105,13 +105,13 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 ### 2.3 进一步改进
 
 - 对优化后的实现再跑 JMH，得到优化后性能  
-- 用 Codex 分析与基准的差异  
+- 用 GPT-5.6 分析与基准的差异
 - 根据分析做下一轮改进  
 
 已完成：[实验规划](docs/task-2.3-plan.md)、
 [完整分析报告](docs/reports/task-2.3-serialization-followup.md)和
 [最终机器可读结果](results/task-2.3-final/README.md)。中间候选数据保存在
-`results/task-2.3-round1/` 至 `task-2.3-round3/`，仅用于审计 Codex 的改进依据，
+`results/task-2.3-round1/` 至 `task-2.3-round3/`，仅用于审计 GPT-5.6 的改进依据，
 不作为当前正式性能结论。
 
 ---
@@ -185,7 +185,7 @@ release 性能基准应使用“快速开始”中的统一 Make 命令，具体
 | 1.1 WhiteBox `controlledCrash` + 触发程序 + 崩溃测试 | 已完成（[规划](docs/task-1.1-plan.md) / [报告](docs/reports/task-1.1-controlled-crash.md)） |
 | 1.2 Error Log 分析 + JBS 关联 + Skill / MCP | 已完成（[报告](docs/reports/task-1.2-ai-crash-analysis.md) / [Skill](skills/hotspot-crash-analysis/SKILL.md) / [MCP](mcp/hotspot-crash-analyzer/README.md)） |
 | 2.1 jtreg / JMH 基准 | 已完成（[报告](docs/reports/task-2.1-serialization-baseline.md) / [JMH](apps/serialization-jmh/README.md)） |
-| 2.2 Codex 方案与实现 | 已完成（[规划](docs/task-2.2-plan.md) / [报告](docs/reports/task-2.2-codex-serialization-optimization.md)） |
+| 2.2 GPT-5.6 方案与实现 | 已完成（[规划](docs/task-2.2-plan.md) / [报告](docs/reports/task-2.2-codex-serialization-optimization.md)） |
 | 2.3 JMH 对比与再优化 | 已完成（[规划](docs/task-2.3-plan.md) / [报告](docs/reports/task-2.3-serialization-followup.md) / [结果](results/task-2.3-final/README.md)） |
 
 完成一项后把上表改为「进行中」或「已完成」，并在 `docs/` 中补对应文档链接。

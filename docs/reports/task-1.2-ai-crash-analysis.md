@@ -10,11 +10,11 @@
 公开 REST API 查询以及建议生成。二者明确区分“搜索候选”和“确认匹配”，避免仅凭
 SIGSEGV 等宽泛关键词错误关联。
 
-## Codex 实验过程（输入与输出）
+## GPT-5.6 实验过程（输入与输出）
 
 ### 1. 实验输入
 
-2026-08-30 在仓库根目录使用 Codex 检查并分析本地完整日志。给 Codex 的任务要求为：
+2026-08-30 在仓库根目录使用 GPT-5.6 检查并分析本地完整日志。给 GPT-5.6 的任务要求为：
 
 ```text
 分析 apps/controlled-crash/crash-logs/hs_err_pid*.log。每种 controlledCrash 类型选择一份
@@ -36,7 +36,7 @@ apps/controlled-crash/crash-logs/hs_err_pid16594.log
 apps/controlled-crash/crash-logs/hs_err_pid16599.log
 ```
 
-Codex 先用以下命令查看每份日志的致命错误头。该步骤直接读取完整 `hs_err`，没有使用测试
+GPT-5.6 先用以下命令查看每份日志的致命错误头。该步骤直接读取完整 `hs_err`，没有使用测试
 fixture 或手工构造数据：
 
 ```bash
@@ -59,11 +59,11 @@ hs_err_pid16594.log:5: fatal error: Force crash with a nested ThreadsListHandle.
 hs_err_pid16599.log:5: fatal error: Crashing with number 99
 ```
 
-### 2. Codex 分析方法
+### 2. GPT-5.6 分析方法
 
-Codex 调用仓库内 `mcp/hotspot-crash-analyzer/analyzer.py` 的 `parse_log_file` 逐份解析完整
+GPT-5.6 调用仓库内 `mcp/hotspot-crash-analyzer/analyzer.py` 的 `parse_log_file` 逐份解析完整
 日志，并同时检查原始文本中的 `WhiteBox.controlledCrash`、`WB_ControlledCrash`、
-`VMError::controlled_crash` 和 `-XX:+WhiteBoxAPI`。解析器负责确定性提取，Codex 负责把
+`VMError::controlled_crash` 和 `-XX:+WhiteBoxAPI`。解析器负责确定性提取，GPT-5.6 负责把
 结构化证据与实验触发方式结合起来作最终判断。可用下面的最小 Python 调用复现单份输入：
 
 ```python
@@ -84,7 +84,7 @@ WhiteBox 调用链与 JVM 参数确定是否为受控注入；只有排除受控
 
 ### 3. 实际输出
 
-Codex 得到的结构化摘要如下。地址等与进程相关的字段已省略，但错误类型、消息、问题帧和
+GPT-5.6 得到的结构化摘要如下。地址等与进程相关的字段已省略，但错误类型、消息、问题帧和
 判断结果均保持原始输出内容：
 
 ```json
@@ -99,9 +99,9 @@ Codex 得到的结构化摘要如下。地址等与进程相关的字段已省�
 ]
 ```
 
-### 4. Codex 输出结论
+### 4. GPT-5.6 输出结论
 
-Codex 的最终判读是：7 份日志分别记录预期的 assertion、guarantee、SIGSEGV、SIGFPE 和
+GPT-5.6 的最终判读是：7 份日志分别记录预期的 assertion、guarantee、SIGSEGV、SIGFPE 和
 三种 fatal 分支；它们都包含受控崩溃证据，且均来自启用了 WhiteBoxAPI 的隔离测试进程。
 因此 `intentional=true`、置信度为 `high`，不应把这些日志报告为 Kona/OpenJDK 的未知产品
 缺陷。编号 14 的 `VMError::controlled_crash` 问题帧是最直接的证据；编号 15 在 macOS 上

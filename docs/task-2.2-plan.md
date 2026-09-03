@@ -1,4 +1,4 @@
-# 任务 2.2 规划：使用 Codex 优化 Java 序列化
+# 任务 2.2 规划：使用 GPT-5.6 优化 Java 序列化
 
 ## 目标与约束
 
@@ -10,7 +10,7 @@ Kona 主工作树已有与本任务无关的 HotSpot `memset` 告警修正。为
 用户修改，2.2 在独立工作树 `/Users/rayovac9/TencentKona-25-task-2.2` 和分支
 `codex/task-2.2-serialization` 上实现。
 
-## Codex 分析
+## GPT-5.6 分析
 
 2.1 的分配结果显示 `GRAPH serialize` 为 18,664 B/op，明显高于 `SMALL serialize` 的
 6,624 B/op。检查 `ObjectOutputStream.defaultWriteFields` 后发现：每序列化一个含引用字段

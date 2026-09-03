@@ -7,4 +7,4 @@
 第二个引用字段使 `ObjectOutputStream` 增大，CUSTOM 也多分配 8 B，因此未被采用。
 
 目录包含完整九场景 JMH JSON、clean 提交环境清单和 SHA-256 校验和。负面结果被保留，
-用于复核 Codex 后续设计决策。详见[任务 2.3 报告](../../docs/reports/task-2.3-serialization-followup.md)。
+用于复核 GPT-5.6 后续设计决策。详见[任务 2.3 报告](../../docs/reports/task-2.3-serialization-followup.md)。
