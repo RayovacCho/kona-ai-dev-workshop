@@ -1,4 +1,4 @@
-# 任务 2.3 报告：JMH 对比、GPT-5.6 分析与进一步改进
+# 任务 2.3 报告：JMH 对比、Codex 分析与进一步改进
 
 ## 结论
 
@@ -52,7 +52,7 @@ JMH 1.37 在 JDK 25 上的 `sun.misc.Unsafe::objectFieldOffset` 终止弃用警�
 
 ## 实现迭代与评审修复
 
-历史候选轮次保留在 `results/task-2.3-round1` 至 `round3`，用于追溯 GPT-5.6 的决策过程：
+历史候选轮次保留在 `results/task-2.3-round1` 至 `round3`，用于追溯 Codex 的决策过程：
 
 | 阶段 | Kona 提交 | 设计 | 历史观测 |
 |---|---|---|---|

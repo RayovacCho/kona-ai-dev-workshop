@@ -38,5 +38,5 @@ KONA_HOME=/path/to/jdk ./run.sh -f 1 -wi 2 -i 3
 正式基准使用根目录 `make jmh-baseline`，同时启用 GC profiler，并将 JSON 保存到
 版本控制中的 `results/`。任务 2.1 基线见
 [基准报告](../../docs/reports/task-2.1-serialization-baseline.md)，任务 2.3 的多轮对比、
-GPT-5.6 分析与最终结果见[进一步优化报告](../../docs/reports/task-2.3-serialization-followup.md)
+Codex 分析与最终结果见[进一步优化报告](../../docs/reports/task-2.3-serialization-followup.md)
 和[`results/task-2.3-final/`](../../results/task-2.3-final/README.md)。
