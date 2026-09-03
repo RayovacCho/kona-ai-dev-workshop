@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import hashlib
 import json
+import math
 import re
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Mapping, Optional
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -63,6 +64,7 @@ BENCHMARK_SOURCE = (
 DEPENDENCY_LOCK = ROOT / "apps" / "serialization-jmh" / "dependencies.sha256"
 BASELINE_REPORT = ROOT / "docs" / "reports" / "task-2.1-serialization-baseline.md"
 FINAL_REPORT = ROOT / "docs" / "reports" / "task-2.3-serialization-followup.md"
+COMPARABLE_ENV = ("os", "architecture", "cpu", "memory")
 
 
 def sha256(path: Path) -> str:
@@ -103,12 +105,22 @@ def check_checksums(result_dir: Path) -> None:
             raise SystemExit(f"校验和不匹配：{path}")
 
 
-def check_environment(result_dir: Path) -> Dict[str, str]:
-    values = {}
-    for line in (result_dir / "environment.txt").read_text(encoding="utf-8").splitlines():
+def read_environment(path: Path) -> Dict[str, str]:
+    values: Dict[str, str] = {}
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line:
+            continue
         key, separator, value = line.partition("=")
-        if separator:
-            values[key] = value
+        if not separator or not key or not value:
+            raise SystemExit(f"环境清单第 {line_number} 行格式无效：{path}")
+        if key in values:
+            raise SystemExit(f"环境清单包含重复字段 {key}：{path}")
+        values[key] = value
+    return values
+
+
+def check_environment(result_dir: Path) -> Dict[str, str]:
+    values = read_environment(result_dir / "environment.txt")
     missing = REQUIRED_ENV - values.keys()
     if missing:
         raise SystemExit(f"缺少环境字段：{sorted(missing)}")
@@ -118,6 +130,8 @@ def check_environment(result_dir: Path) -> Dict[str, str]:
         raise SystemExit("Kona commit 不是完整的 40 位 Git 对象编号")
     if values["jmh_version"] != "1.37":
         raise SystemExit(f"JMH 版本不符合预期：{values['jmh_version']}")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", values["captured_at_utc"]):
+        raise SystemExit("环境采集时间不是 UTC ISO-8601 格式")
     if values["benchmark_source_sha256"] != sha256(BENCHMARK_SOURCE):
         raise SystemExit("基准源码与正式基准记录不一致")
     if values["dependency_lock_sha256"] != sha256(DEPENDENCY_LOCK):
@@ -138,6 +152,20 @@ def check_environment(result_dir: Path) -> Dict[str, str]:
             if len(value) != 64 or any(char not in "0123456789abcdef" for char in value.lower()):
                 raise SystemExit(f"JDK 产物哈希无效：{key}")
     return values
+
+
+def check_comparable_environments(environments: Mapping[Path, Dict[str, str]]) -> None:
+    baseline = environments.get(RESULT_ROOT / "task-2.1-baseline")
+    final = environments.get(RESULT_ROOT / "task-2.3-final")
+    if baseline is None or final is None:
+        return
+    differences = {
+        key: (baseline.get(key), final.get(key))
+        for key in COMPARABLE_ENV
+        if baseline.get(key) != final.get(key)
+    }
+    if differences:
+        raise SystemExit(f"基线与最终结果的测试环境不一致：{differences}")
 
 
 def check_required_provenance(result_dir: Path, environment: Dict[str, str]) -> None:
@@ -185,16 +213,29 @@ def check_jmh(
                 raise SystemExit(f"JMH 配置不符合预期 {key}：{entry.get(key)}")
         if entry["primaryMetric"].get("scoreUnit") != "us/op":
             raise SystemExit(f"分数单位不符合预期：{entry['benchmark']}")
-        if entry["primaryMetric"]["score"] <= 0:
+        score = entry["primaryMetric"].get("score")
+        score_error = entry["primaryMetric"].get("scoreError")
+        if not isinstance(score, (int, float)) or not math.isfinite(score) or score <= 0:
             raise SystemExit(f"主分数无效：{entry['benchmark']}")
+        if (
+            not isinstance(score_error, (int, float))
+            or not math.isfinite(score_error)
+            or score_error < 0
+        ):
+            raise SystemExit(f"主分数误差无效：{entry['benchmark']}")
         allocation = entry.get("secondaryMetrics", {}).get("gc.alloc.rate.norm", {})
-        if allocation.get("score", 0) <= 0:
+        allocation_score = allocation.get("score")
+        if (
+            not isinstance(allocation_score, (int, float))
+            or not math.isfinite(allocation_score)
+            or allocation_score <= 0
+        ):
             raise SystemExit(f"缺少 GC 分配指标：{entry['benchmark']}")
         displayed_score = (
-            f"{entry['primaryMetric']['score']:.3f} ± "
-            f"{entry['primaryMetric']['scoreError']:.3f}"
+            f"{score:.3f} ± "
+            f"{score_error:.3f}"
         )
-        displayed_allocation = f"{allocation['score']:,.0f}"
+        displayed_allocation = f"{allocation_score:,.0f}"
         if report is not None and displayed_score not in report:
             raise SystemExit(f"报告中缺少 JMH 分数：{displayed_score}")
         if report is not None and displayed_allocation not in report:
@@ -209,9 +250,12 @@ if __name__ == "__main__":
     missing_result_dirs = REQUIRED_RESULT_DIRS - set(RESULT_DIRS)
     if missing_result_dirs:
         raise SystemExit(f"缺少基准结果目录：{sorted(map(str, missing_result_dirs))}")
+    environments = {}
     for result_dir in RESULT_DIRS:
         check_checksums(result_dir)
         environment = check_environment(result_dir)
+        environments[result_dir] = environment
         check_required_provenance(result_dir, environment)
         check_jmh(result_dir, environment, reports.get(result_dir.name))
+    check_comparable_environments(environments)
     print(f"基准产物：{len(RESULT_DIRS)} 组检查通过")

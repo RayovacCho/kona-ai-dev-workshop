@@ -12,6 +12,8 @@ output=$1
 script_dir=$(cd "$(dirname "$0")" && pwd)
 workshop_root=$(cd "$script_dir/.." && pwd)
 mkdir -p "$(dirname "$output")"
+output_tmp=$(mktemp "${output}.tmp.XXXXXX")
+trap 'rm -f "$output_tmp"' EXIT
 
 sha256() {
   if command -v sha256sum >/dev/null 2>&1; then
@@ -88,7 +90,10 @@ fi
   echo "jmh_version=1.37"
   echo "benchmark_source_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/src/workshop/serialization/JavaSerializationBenchmark.java")"
   echo "dependency_lock_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/dependencies.sha256")"
-  echo "java_version=$($KONA_HOME/bin/java -version 2>&1 | paste -sd '|' -)"
-} > "$output"
+  echo "java_version=$("$kona_home/bin/java" -version 2>&1 | paste -sd '|' -)"
+} > "$output_tmp"
+
+mv "$output_tmp" "$output"
+trap - EXIT
 
 echo "已写入 $output"

@@ -12,7 +12,6 @@
 export WORKSHOP_ROOT=/path/to/kona-ai-dev-workshop
 export KONA_SRC=/path/to/TencentKona-25
 export JAVA_HOME="$KONA_SRC/build/macosx-aarch64-server-fastdebug/images/jdk"
-export PATH="$JAVA_HOME/bin:$PATH"
 cd "$WORKSHOP_ROOT/apps/controlled-crash"
 ./build.sh
 ./run-crash.sh 14
@@ -26,6 +25,9 @@ cd "$WORKSHOP_ROOT/apps/controlled-crash"
 
 日志默认写入 `crash-logs/hs_err_pid*.log`。按导师要求，仓库提交第一轮七类用例各一份完整
 日志；目录中新生成的日志和其余重复运行日志仍由 Git 忽略。
+`crash-logs/SHA256SUMS` 固定这七份原始证据的内容，仓库根目录的
+`make check-crash-logs` 会同时验证校验和、完整结束标记、错误类型、用例编号和 WhiteBox
+调用链。
 
 | 编号 | 预期直接原因 |
 |---:|---|
@@ -39,3 +41,5 @@ cd "$WORKSHOP_ROOT/apps/controlled-crash"
 
 注意：`-Xbootclasspath/a` 是必要条件。WhiteBox 原生方法只向引导类加载器加载的
 `jdk.test.whitebox.WhiteBox` 注册；普通类路径（classpath）会被 VM 拒绝。
+构建脚本直接调用 `$JAVA_HOME/bin/javac` 和 `$JAVA_HOME/bin/jar`，运行脚本会拒绝
+非 fastdebug/slowdebug JVM，避免意外混用系统 JDK 或性能测试使用的 release JDK。

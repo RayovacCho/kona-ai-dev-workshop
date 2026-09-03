@@ -59,4 +59,5 @@ make test CONF=macosx-aarch64-server-fastdebug \
 fastdebug 构建、WhiteBox Java/JNI 调用链、参数化应用和七类崩溃测试均已完成。每个
 用例均产生独立 `hs_err`，其错误类别与 `VMError::controlled_crash` 的实现一致。完整日志
 位于 `apps/controlled-crash/crash-logs/`；按导师要求，每类用例提交第一轮的一份完整日志，
-其余两轮重复日志保留在本地且不提交。
+`SHA256SUMS` 固定其原始内容，并由 `make check-crash-logs` 自动核验完整性、错误类别和
+WhiteBox 调用链。其余两轮重复日志保留在本地且不提交。

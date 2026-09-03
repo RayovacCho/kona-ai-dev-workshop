@@ -90,7 +90,17 @@ def _call_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     raise AnalysisError(f"未知工具：{name}")
 
 
-def handle(message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _protocol_error(request_id: Any, code: int, message: str) -> Dict[str, Any]:
+    return {
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "error": {"code": code, "message": message},
+    }
+
+
+def handle(message: Any) -> Optional[Dict[str, Any]]:
+    if not isinstance(message, dict) or message.get("jsonrpc") != "2.0":
+        return _protocol_error(None, -32600, "无效的 JSON-RPC 请求")
     method = message.get("method")
     request_id = message.get("id")
     if request_id is None:
@@ -112,9 +122,18 @@ def handle(message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if method == "tools/list":
         return {"jsonrpc": "2.0", "id": request_id, "result": {"tools": TOOLS}}
     if method == "tools/call":
-        params = message.get("params") or {}
         try:
-            data = _call_tool(params.get("name", ""), params.get("arguments") or {})
+            params = message.get("params", {})
+            if params is None:
+                params = {}
+            if not isinstance(params, dict):
+                raise AnalysisError("tools/call 的 params 必须是对象")
+            arguments = params.get("arguments", {})
+            if arguments is None:
+                arguments = {}
+            if not isinstance(arguments, dict):
+                raise AnalysisError("tools/call 的 arguments 必须是对象")
+            data = _call_tool(params.get("name", ""), arguments)
             result = _tool_result(data)
         except (AnalysisError, OSError, TypeError, ValueError) as exc:
             result = _tool_result({"error": str(exc)}, is_error=True)
@@ -130,12 +149,22 @@ def main() -> int:
     for raw in sys.stdin:
         try:
             message = json.loads(raw)
-            response = handle(message)
-            if response is not None:
-                print(json.dumps(response, ensure_ascii=False), flush=True)
+        except json.JSONDecodeError as exc:
+            response = _protocol_error(None, -32700, f"JSON 解析失败：{exc.msg}")
         except Exception as exc:  # 协议诊断信息不能写入 stdout。
             print(f"hotspot-crash-analyzer: {exc}", file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
+            response = _protocol_error(None, -32603, "服务器内部错误")
+        else:
+            try:
+                response = handle(message)
+            except Exception as exc:  # 保证每个含 id 的请求都能收到协议错误响应。
+                print(f"hotspot-crash-analyzer: {exc}", file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                request_id = message.get("id") if isinstance(message, dict) else None
+                response = _protocol_error(request_id, -32603, "服务器内部错误")
+        if response is not None:
+            print(json.dumps(response, ensure_ascii=False), flush=True)
     return 0
 
 

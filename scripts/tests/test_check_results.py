@@ -64,6 +64,22 @@ class ChecksumManifestTest(unittest.TestCase):
         result_dir = check_results.RESULT_ROOT / "task-2.3-round1"
         check_results.check_required_provenance(result_dir, {})
 
+    def test_rejects_duplicate_environment_fields(self):
+        environment = self.result_dir / "environment.txt"
+        environment.write_text("os=test\nos=changed\n")
+        with self.assertRaises(SystemExit):
+            check_results.read_environment(environment)
+
+    def test_rejects_non_comparable_final_environment(self):
+        baseline = check_results.RESULT_ROOT / "task-2.1-baseline"
+        final = check_results.RESULT_ROOT / "task-2.3-final"
+        environments = {
+            baseline: {"os": "test", "architecture": "arm64", "cpu": "cpu", "memory": "16 GB"},
+            final: {"os": "changed", "architecture": "arm64", "cpu": "cpu", "memory": "16 GB"},
+        }
+        with self.assertRaises(SystemExit):
+            check_results.check_comparable_environments(environments)
+
 
 if __name__ == "__main__":
     unittest.main()

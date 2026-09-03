@@ -9,12 +9,12 @@ BASELINE_DIR := $(abspath $(RESULT_DIR))
 
 .NOTPARALLEL: benchmark
 
-.PHONY: check test-mcp test-results-validator check-results jmh-build jmh-smoke verify-clean-kona \
+.PHONY: check test-mcp test-results-validator check-results check-crash-logs jmh-build jmh-smoke verify-clean-kona \
         verify-kona-home configure-kona \
         jdk-images jtreg-baseline jmh-baseline capture-environment \
         baseline-checksums benchmark
 
-check: test-mcp test-results-validator check-results
+check: test-mcp test-results-validator check-results check-crash-logs
 	@bash -n apps/controlled-crash/build.sh apps/controlled-crash/run-crash.sh \
 	  apps/controlled-crash/test-crashes.sh apps/serialization-jmh/build.sh \
 	  apps/serialization-jmh/run.sh scripts/capture-environment.sh
@@ -28,6 +28,9 @@ test-results-validator:
 
 check-results:
 	@$(PYTHON) scripts/check-results.py
+
+check-crash-logs:
+	@$(PYTHON) scripts/check-crash-logs.py
 
 jmh-build:
 	@test -n "$(KONA_HOME)" || { echo "请设置 KONA_HOME" >&2; exit 2; }

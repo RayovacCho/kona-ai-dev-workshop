@@ -13,6 +13,11 @@ JAR="$APP_DIR/build/controlled-crash.jar"
 
 [[ -x "$JAVA_HOME/bin/java" ]] || { echo "文件不可执行：$JAVA_HOME/bin/java" >&2; exit 2; }
 [[ -f "$JAR" ]] || { echo "请先构建应用：$APP_DIR/build.sh" >&2; exit 2; }
+java_version=$("$JAVA_HOME/bin/java" -version 2>&1)
+[[ "$java_version" == *fastdebug* || "$java_version" == *slowdebug* ]] || {
+  echo "受控崩溃只能使用 fastdebug/slowdebug JVM：$JAVA_HOME" >&2
+  exit 2
+}
 mkdir -p "$LOG_DIR"
 
 exec "$JAVA_HOME/bin/java" \

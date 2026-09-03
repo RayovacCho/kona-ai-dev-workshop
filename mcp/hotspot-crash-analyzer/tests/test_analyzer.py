@@ -13,6 +13,7 @@ sys.path.insert(0, str(PROJECT))
 
 from analyzer import (
     AnalysisError,
+    MAX_LOG_BYTES,
     analyze_file,
     build_jql,
     get_jbs_issue,
@@ -20,6 +21,7 @@ from analyzer import (
     parse_log_text,
     search_jbs,
 )
+from server import handle
 
 
 class AnalyzerTest(unittest.TestCase):
@@ -50,6 +52,26 @@ class AnalyzerTest(unittest.TestCase):
     def test_rejects_non_hs_err(self):
         with self.assertRaises(AnalysisError):
             parse_log_text("ordinary Java exception\n")
+
+    def test_rejects_oversized_content(self):
+        with self.assertRaises(AnalysisError):
+            parse_log_text("x" * (MAX_LOG_BYTES + 1))
+
+    def test_tools_call_rejects_non_object_arguments(self):
+        response = handle(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "tools/call",
+                "params": {"name": "search_jbs", "arguments": []},
+            }
+        )
+        self.assertTrue(response["result"]["isError"])
+        self.assertIn("arguments 必须是对象", response["result"]["content"][0]["text"])
+
+    def test_rejects_invalid_json_rpc_request(self):
+        response = handle([])
+        self.assertEqual(-32600, response["error"]["code"])
 
     def test_non_controlled_native_crash_searches_jbs(self):
         candidate = {

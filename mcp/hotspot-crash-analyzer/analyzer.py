@@ -184,6 +184,11 @@ def _search_terms(
 
 
 def parse_log_text(text: str, source: str = "<content>") -> Dict[str, Any]:
+    if not isinstance(text, str):
+        raise AnalysisError("日志内容必须是字符串")
+    size = len(text.encode("utf-8"))
+    if size > MAX_LOG_BYTES:
+        raise AnalysisError(f"日志大小为 {size} 字节；最大允许 {MAX_LOG_BYTES} 字节")
     error = _error_details(text)
     frame = _problematic_frame(text)
     controlled = (

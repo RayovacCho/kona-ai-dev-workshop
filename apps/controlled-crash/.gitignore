@@ -1,5 +1,6 @@
 /build/
 /crash-logs/*
+!/crash-logs/SHA256SUMS
 !/crash-logs/hs_err_pid16569.log
 !/crash-logs/hs_err_pid16574.log
 !/crash-logs/hs_err_pid16579.log

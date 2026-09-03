@@ -121,10 +121,12 @@ Codex 的最终判读是：7 份日志分别记录预期的 assertion、guarante
 | 17 | `Force crash with a nested ThreadsListHandle` | 主动 fatal 测试嵌套 handle | 不适用 | 保留为错误处理回归样本 |
 | 99 | `fatal error: Crashing with number 99` | 通用受控 fatal 分支 | 不适用 | 不需要升级或打 JVM 补丁 |
 
-所有样本的共同调用链包含 `WhiteBox.controlledCrash`、`WB_ControlledCrash` 和
-`VMError::controlled_crash`，且命令行启用了 `-XX:+WhiteBoxAPI`。因此高置信度结论是：
-这些崩溃均为 1.1 有意注入，不是 Kona/OpenJDK 的未知缺陷。MCP 对这类日志返回空的
-JBS 问题列表并说明跳过原因；若强制用宽泛关键词查询，得到的问题只能算无关候选。
+所有样本的共同调用链都包含 `WhiteBox.controlledCrash` 和 `WB_ControlledCrash`，且命令行
+启用了 `-XX:+WhiteBoxAPI`；除编号 16 外还直接打印了 `VMError::controlled_crash` 帧。编号
+16 在活动 `ThreadsListHandle` 分支的日志从 `WB_ControlledCrash` 开始打印原生帧，但错误消息
+与 Java/VM 调用链仍完整标识了受控入口。因此高置信度结论是：这些崩溃均为 1.1 有意注入，
+不是 Kona/OpenJDK 的未知缺陷。MCP 对这类日志返回空的 JBS 问题列表并说明跳过原因；若强制
+用宽泛关键词查询，得到的问题只能算无关候选。
 
 ## JBS 已知问题关联
 

@@ -7,7 +7,7 @@
 - 本仓库保存规划、程序、工具、精简测试样本、正式结构化结果和报告。
 - Kona 源码修改只进入 `TencentKona-25` fork，并以 commit 标识。
 - JDK/JMH 构建目录、依赖 JAR、临时日志和试跑结果不提交。
-- 按导师要求，任务 1.1 的七类受控崩溃各提交第一轮的一份完整 `hs_err`；重复运行日志仍不提交。
+- 按导师要求，任务 1.1 的七类受控崩溃各提交第一轮的一份完整 `hs_err` 及校验和；重复运行日志仍不提交。
 - 可审计且体积小的正式结果（JMH JSON、环境清单）必须提交。
 
 ## 正式基准前置条件
@@ -47,6 +47,7 @@ Linux 或其他配置通过覆盖 `KONA_CONF` 处理。
 
 ```bash
 make check
+make check-crash-logs
 make configure-kona
 make jdk-images
 make jtreg-baseline
@@ -61,6 +62,9 @@ profiler 的正式 JMH，并采集环境。目标默认拒绝覆盖已有结果�
 
 `make check-results` 会递归发现 `results/` 下的基准结果和新增复现实验，要求校验和清单
 恰好包含 `jmh-result.json` 与 `environment.txt`，并验证 JMH 使用的 JVM 与环境清单一致。
+它还会拒绝重复或空的环境字段、无效数值，并验证当前基线与最终结果使用相同的 OS、架构、
+CPU 和内存。`make check-crash-logs` 则验证提交的七份完整崩溃日志及其 `SHA256SUMS`、错误
+类别、用例编号和受控 WhiteBox 调用链。这两个校验均包含在 `make check` 和 CI 中。
 除明确列出的 Round 1–3 legacy 候选外，当前正式基线、最终结果以及以后新增的复现实验
 都必须使用 `environment_schema=2`。Round 1–3 只作为历史候选的决策证据，不再作为
 满足当前产物绑定规则的正式性能证据；该例外按精确目录名限制，不能被新结果继承。

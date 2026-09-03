@@ -21,10 +21,15 @@ download() {
   local version="$2"
   local path="$3"
   local target="$LIB/$artifact-$version.jar"
+  local temporary="$target.tmp.$$"
   if [[ ! -f "$target" ]]; then
-    curl --fail --location --retry 3 \
+    if ! curl --fail --location --retry 3 \
       "https://repo.maven.apache.org/maven2/$path/$artifact/$version/$artifact-$version.jar" \
-      --output "$target"
+      --output "$temporary"; then
+      rm -f "$temporary"
+      return 1
+    fi
+    mv "$temporary" "$target"
   fi
 }
 

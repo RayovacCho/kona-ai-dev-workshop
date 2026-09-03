@@ -27,7 +27,7 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 ## 快速开始
 
 仓库内的 Python 工具要求 **Python 3.6 或更高版本**，且不依赖第三方 Python 包。
-验证仓库内的脚本、MCP 测试和已提交的正式基准结果：
+验证仓库内的脚本、MCP 测试、七份完整崩溃日志和已提交的正式基准结果：
 
 ```bash
 make check
@@ -144,7 +144,7 @@ kona-ai-dev-workshop/
 | 规划、报告、技能、MCP、小工具 | **本仓库**（给导师看） |
 | WhiteBox、`java.io` 序列化等 JDK 修改 | **Kona 个人分支**（完整源码与构建） |
 | 构建产物、依赖 JAR、临时日志和试跑结果 | **不提交** |
-| 任务 1.1 第一轮七类完整 `hs_err` | **提交**到 `apps/controlled-crash/crash-logs/`，重复运行日志不提交 |
+| 任务 1.1 第一轮七类完整 `hs_err` 及校验和 | **提交**到 `apps/controlled-crash/crash-logs/`，重复运行日志不提交 |
 | 正式 JMH JSON 与环境清单 | **提交**到 `results/`，保证结果可审计 |
 
 ---
