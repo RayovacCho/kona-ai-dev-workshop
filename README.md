@@ -143,7 +143,8 @@ kona-ai-dev-workshop/
 |------|--------|
 | 规划、报告、技能、MCP、小工具 | **本仓库**（给导师看） |
 | WhiteBox、`java.io` 序列化等 JDK 修改 | **Kona 个人分支**（完整源码与构建） |
-| 构建产物、依赖 JAR、`hs_err` 全文和临时日志 | **不提交** |
+| 构建产物、依赖 JAR、临时日志和试跑结果 | **不提交** |
+| 任务 1.1 第一轮七类完整 `hs_err` | **提交**到 `apps/controlled-crash/crash-logs/`，重复运行日志不提交 |
 | 正式 JMH JSON 与环境清单 | **提交**到 `results/`，保证结果可审计 |
 
 ---

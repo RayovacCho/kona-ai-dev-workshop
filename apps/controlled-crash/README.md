@@ -24,7 +24,8 @@ cd "$WORKSHOP_ROOT/apps/controlled-crash"
 ./test-crashes.sh
 ```
 
-日志默认写入 `crash-logs/hs_err_pid*.log`，该目录已被 git 忽略。
+日志默认写入 `crash-logs/hs_err_pid*.log`。按导师要求，仓库提交第一轮七类用例各一份完整
+日志；目录中新生成的日志和其余重复运行日志仍由 Git 忽略。
 
 | 编号 | 预期直接原因 |
 |---:|---|
