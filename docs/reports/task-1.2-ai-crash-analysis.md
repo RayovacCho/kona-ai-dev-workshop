@@ -4,7 +4,7 @@
 
 - 智能体技能：`skills/hotspot-crash-analysis/`
 - MCP 服务器：`mcp/hotspot-crash-analyzer/`
-- 测试样本：1.1 产生的本地 `apps/controlled-crash/crash-logs/hs_err_pid*.log`
+- 测试样本：1.1 产生并提交的七份完整 `apps/controlled-crash/crash-logs/hs_err_pid*.log`
 
 技能规定证据优先级和 JBS 关联标准；MCP 负责可重复的日志解析、直接原因初判、JBS
 公开 REST API 查询以及建议生成。二者明确区分“搜索候选”和“确认匹配”，避免仅凭
@@ -23,8 +23,8 @@ SIGSEGV 等宽泛关键词错误关联。
 输出和分析结论写入 docs/reports/task-1.2-ai-crash-analysis.md。
 ```
 
-日志目录中共有 21 份完整日志，即 7 个用例的三轮运行。本次选择第一轮连续生成的 7 份
-日志作为输入，分别对应编号 1、2、14、15、16、17 和 99：
+日志目录本地共有 21 份完整日志，即 7 个用例的三轮运行。本次选择并提交第一轮连续生成的
+7 份日志作为输入，分别对应编号 1、2、14、15、16、17 和 99；其余 14 份重复运行日志不提交：
 
 ```text
 apps/controlled-crash/crash-logs/hs_err_pid16569.log
