@@ -25,9 +25,10 @@ REQUIRED_RESULT_DIRS = {
     RESULT_ROOT / "task-2.3-round3",
     RESULT_ROOT / "task-2.3-final",
 }
-CURRENT_PROVENANCE_RESULT_DIRS = {
-    RESULT_ROOT / "task-2.1-baseline",
-    RESULT_ROOT / "task-2.3-final",
+LEGACY_RESULT_DIRS = {
+    RESULT_ROOT / "task-2.3-round1",
+    RESULT_ROOT / "task-2.3-round2",
+    RESULT_ROOT / "task-2.3-round3",
 }
 REQUIRED_ENV = {
     "captured_at_utc",
@@ -140,7 +141,7 @@ def check_environment(result_dir: Path) -> Dict[str, str]:
 
 
 def check_required_provenance(result_dir: Path, environment: Dict[str, str]) -> None:
-    if result_dir in CURRENT_PROVENANCE_RESULT_DIRS and environment.get("environment_schema") != "2":
+    if result_dir not in LEGACY_RESULT_DIRS and environment.get("environment_schema") != "2":
         raise SystemExit(f"正式结果必须使用 environment_schema=2：{result_dir}")
 
 
@@ -207,7 +208,7 @@ if __name__ == "__main__":
     }
     missing_result_dirs = REQUIRED_RESULT_DIRS - set(RESULT_DIRS)
     if missing_result_dirs:
-        raise SystemExit(f"缺少正式结果目录：{sorted(map(str, missing_result_dirs))}")
+        raise SystemExit(f"缺少基准结果目录：{sorted(map(str, missing_result_dirs))}")
     for result_dir in RESULT_DIRS:
         check_checksums(result_dir)
         environment = check_environment(result_dir)

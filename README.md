@@ -16,7 +16,7 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 | 总规划与进度 | [docs/](docs/) |
 | 崩溃分析、JMH 等报告 | [docs/reports/](docs/reports/) |
 | 触发 JVM 崩溃的小程序、JMH 程序 | [apps/](apps/) |
-| 正式机器可读基准结果 | [results/](results/) |
+| 当前正式结果与历史候选数据 | [results/](results/) |
 | 崩溃分析智能体技能 | [skills/](skills/) |
 | 崩溃分析 MCP 服务器 | [mcp/](mcp/) |
 
@@ -110,8 +110,9 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 
 已完成：[实验规划](docs/task-2.3-plan.md)、
 [完整分析报告](docs/reports/task-2.3-serialization-followup.md)和
-[最终机器可读结果](results/task-2.3-final/README.md)。中间候选的正式结果也保存在
-`results/task-2.3-round1/` 至 `task-2.3-round3/`，用于审计 Codex 的改进依据。
+[最终机器可读结果](results/task-2.3-final/README.md)。中间候选数据保存在
+`results/task-2.3-round1/` 至 `task-2.3-round3/`，仅用于审计 Codex 的改进依据，
+不作为当前正式性能结论。
 
 ---
 

@@ -1,8 +1,13 @@
 # 任务 2.2 报告：使用 Codex 优化 Java 序列化
 
+> 本报告记录任务 2.2 在提交 `122f6b52a` 上的阶段实现和短时 A/B 结果。
+> 后续任务 2.3 已继续迭代并完成评审修复；当前最终实现、正式性能数据和验证结论见
+> [任务 2.3 报告](task-2.3-serialization-followup.md)及
+> [Kona PR #1](https://github.com/RayovacCho/TencentKona-25/pull/1)。
+
 ## 结论
 
-Codex 完成了方案规划、Kona 源码实现、回归测试和短时 A/B 性能验证。最终实现按序列化
+Codex 完成了方案规划、Kona 源码实现、回归测试和短时 A/B 性能验证。任务 2.2 阶段实现按序列化
 递归深度复用 `ObjectOutputStream` 的对象字段暂存数组，保持原有字段快照和 wire format
 语义。Kona release 镜像构建成功，序列化 jtreg **161/161 全部通过**。
 
