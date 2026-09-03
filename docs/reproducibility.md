@@ -60,6 +60,9 @@ profiler 的正式 JMH，并采集环境。目标默认拒绝覆盖已有结果�
 
 `make check-results` 会递归发现 `results/` 下的正式结果和新增复现实验，要求校验和清单
 恰好包含 `jmh-result.json` 与 `environment.txt`，并验证 JMH 使用的 JVM 与环境清单一致。
+当前正式基线 `task-2.1-baseline` 和最终结果 `task-2.3-final` 必须使用
+`environment_schema=2`；Round 1–3 只作为历史候选的 legacy 决策证据，不再作为
+满足当前产物绑定规则的正式性能证据。
 
 ## 结果解释
 

@@ -4,16 +4,16 @@
 
 Kona JDK 25 release 镜像构建成功，序列化相关 jtreg 测试共 **160 项全部通过**。
 独立 JMH 程序完成 9 个基准场景；在本机上，小对象完整往返为
-**1.594 ± 0.012 us/op**，100 元素对象图完整往返为
-**17.866 ± 0.345 us/op**。这些数字作为任务 2.2 和 2.3 的优化前基准。
+**1.613 ± 0.015 us/op**，100 元素对象图完整往返为
+**18.578 ± 1.214 us/op**。这些数字与最终结果在同一环境中顺序重测，作为当前可审计基准。
 
 ## 基准环境
 
 | 项目 | 值 |
 |---|---|
-| 日期 | 2026-08-26 |
+| 日期 | 2026-09-03 |
 | 机器 | MacBook Air，Apple M5（4 性能核 + 6 能效核），16 GB |
-| 系统 | macOS 26.5.1（arm64） |
+| 系统 | macOS 26.6.2（arm64） |
 | Kona 源码 | `3dfb920595202df2dfa5b9f5b6c3b124cf32aabf` |
 | JVM | Kona/OpenJDK `25.0.4-internal`，release/product build |
 | jtreg | `8-dev+0`（OpenJDK 配置使用的 `jtreg-8+2` 包） |
@@ -74,17 +74,17 @@ make capture-environment
 
 | 操作 | SMALL (us/op) | GRAPH (us/op) | CUSTOM (us/op) |
 |---|---:|---:|---:|
-| `serialize` | 0.398 ± 0.002 | 5.589 ± 0.124 | 0.366 ± 0.004 |
-| `deserialize` | 1.152 ± 0.011 | 11.452 ± 0.120 | 0.681 ± 0.008 |
-| `roundTrip` | 1.594 ± 0.012 | 17.866 ± 0.345 | 1.096 ± 0.003 |
+| `serialize` | 0.407 ± 0.008 | 6.077 ± 0.216 | 0.374 ± 0.010 |
+| `deserialize` | 1.162 ± 0.002 | 11.541 ± 0.229 | 0.702 ± 0.012 |
+| `roundTrip` | 1.613 ± 0.015 | 18.578 ± 1.214 | 1.126 ± 0.025 |
 
 GC profiler 记录的归一化分配量如下；数值越低越好：
 
 | 操作 | SMALL (B/op) | GRAPH (B/op) | CUSTOM (B/op) |
 |---|---:|---:|---:|
 | `serialize` | 6,624 | 18,664 | 6,560 |
-| `deserialize` | 3,653 | 34,021 | 2,840 |
-| `roundTrip` | 10,296 | 54,840 | 9,392 |
+| `deserialize` | 3,664 | 34,013 | 2,832 |
+| `roundTrip` | 10,304 | 54,832 | 9,392 |
 
 正式原始数据与环境清单已提交到
 [`results/task-2.1-baseline`](../../results/task-2.1-baseline/README.md)。JMH JSON 是数字的

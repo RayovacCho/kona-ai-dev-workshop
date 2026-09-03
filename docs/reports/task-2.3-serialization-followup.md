@@ -2,157 +2,102 @@
 
 ## 结论
 
-任务 2.3 已完成两次正式对照和三次数据驱动的实现迭代。最终 Kona 提交为
-`cb9164b6b`，提交审阅入口为
-[Kona PR #1](https://github.com/RayovacCho/TencentKona-25/pull/1)。在最能体现本次写路径
-改动的 `GRAPH serialize` 场景中：
+任务 2.3 已完成数据驱动的多轮实现迭代，并根据后续评审修复了产物绑定和长生命周期缓存保留风险。
+最终 Kona 提交为 `0c13d1af7`，实现审阅入口为
+[Kona PR #1](https://github.com/RayovacCho/TencentKona-25/pull/1)。
 
-- 分配量从基线 **18,664 B/op** 降到 **16,320 B/op**，减少 **2,344 B/op
-  （12.56%）**；
-- 耗时从 **5.589 ± 0.124 us/op** 变为 **5.682 ± 0.151 us/op**，点估计高
-  1.66%，但 99.9% 置信区间重叠，不能认定存在确定性加速或回退；
-- `SMALL` 与 `CUSTOM` 写路径均恢复到基线分配量，消除了第一轮的浅对象固定开销；
-- `GRAPH roundTrip` 为 **16.535 ± 0.029 us/op**、**52,496 B/op**，相对基线点
-  估计分别为 -7.45% 和 -4.27%。不过读取源码没有修改，且读取分配在不同 fork 间存在
-  离散簇，因此不能把全部往返耗时变化归因于本次写路径优化。
+当前正式基线与最终结果于 2026-09-03 在同一台 Apple M5 MacBook Air、同一 macOS 26.6.2
+环境中顺序重测，两边均使用与 Kona 提交匹配的 release `images/jdk`。在最能体现写路径改动的
+`GRAPH serialize` 场景中：
 
-最终实现只缓存递归嵌套层的对象字段快照数组，根层继续使用原有的一次性数组；正常路径
-逐槽清空，只有异常路径才批量清理剩余引用。新增目标测试及完整序列化 jtreg
+- 分配量从 **18,664 B/op** 降到 **16,320 B/op**，减少 **2,344 B/op（12.56%）**；
+- 耗时从 **6.077 ± 0.216 us/op** 变为 **6.284 ± 0.029 us/op**，点估计高 3.40%，
+  但 99.9% 置信区间仍重叠，不能认定存在确定性加速或回退；
+- `SMALL` 与 `CUSTOM` 写路径均保持基线分配量；
+- 读取路径没有修改，其耗时和 fork 分配波动不用于评价此次优化。
+
+最终实现只在当前顶层对象图内复用递归嵌套层的字段快照数组。顶层写入返回时会丢弃嵌套缓存，
+不再让长生命周期 `ObjectOutputStream` 保留历史最深、最宽对象图的数组容量。新增目标测试和完整序列化 jtreg
 **161/161 全部通过**。
 
-## Codex 输入与执行规划
+## 正式实验约束
 
-给 Codex 的任务输入是：
-
-```text
-继续完成 2.3：对优化实现执行 JMH 得到性能，使用 Codex 分析差异，并根据分析结果做
-进一步改进。规划、代码、报告和结果都放入仓库。
-```
-
-Codex 先固定实验约束，再按“测量 → 分析 → 修改 → 正确性验证 → 复测”推进。完整规划见
-[任务 2.3 规划](../task-2.3-plan.md)。所有正式轮次都使用同一台 Apple M5 MacBook Air、
-同一 JMH 1.37 程序和以下参数；历史产物中发现的 OS 与 JDK 镜像形式差异在下文单独披露：
+两轮当前正式结果都使用：
 
 ```text
 Mode: AverageTime; Threads: 1; Forks: 3
 Warmup: 5 × 1 s; Measurement: 5 × 1 s
 Profiler: gc; 结果单位: us/op 与 B/op
+OS: macOS 26.6.2; JDK image: images/jdk
 ```
 
-基准命令（每轮只替换 clean Kona 提交和结果目录）：
+`environment_schema=2` 记录了 Kona commit、JDK `SOURCE` 修订、JMH 源码与依赖锁定哈希，
+以及 `release`、`bin/java`、`lib/modules` 的 SHA-256。`make verify-kona-home` 会在测量前拒绝
+dirty 工作树、exploded JDK、错误路径或 `SOURCE` 不匹配的镜像。
+
+复现时先对相应 Kona 提交执行 `configure` 和 `make images`，然后使用新结果目录：
 
 ```bash
-KONA_SRC=/Users/rayovac9/TencentKona-25-task-2.2 \
-KONA_HOME=/Users/rayovac9/TencentKona-25-task-2.2/build/macosx-aarch64-server-release/images/jdk \
-RESULT_DIR=results/reproductions/task-2.3-final-YYYYMMDD make jmh-baseline
+KONA_SRC=/path/to/clean/TencentKona-25 \
+KONA_HOME=/path/to/clean/TencentKona-25/build/macosx-aarch64-server-release/images/jdk \
+RESULT_DIR=results/reproductions/task-2.3-YYYYMMDD make jmh-baseline
 
-KONA_SRC=/Users/rayovac9/TencentKona-25-task-2.2 \
-KONA_HOME=/Users/rayovac9/TencentKona-25-task-2.2/build/macosx-aarch64-server-release/images/jdk \
-RESULT_DIR=results/reproductions/task-2.3-final-YYYYMMDD make capture-environment
+KONA_SRC=/path/to/clean/TencentKona-25 \
+KONA_HOME=/path/to/clean/TencentKona-25/build/macosx-aarch64-server-release/images/jdk \
+RESULT_DIR=results/reproductions/task-2.3-YYYYMMDD make capture-environment
 ```
 
-### 历史结果的环境差异与解释边界
+JMH 1.37 在 JDK 25 上的 `sun.misc.Unsafe::objectFieldOffset` 终止弃用警告来自 JMH 自身，
+两轮基准均完整生成了九项 JSON，不是 Kona 修改的测试失败。
 
-提交后审计发现，任务 2.1 基线运行于 macOS 26.5.1，任务 2.3 各轮运行于 macOS 26.6.2；
-此外，基线及 Round 1/2 使用 `images/jdk`，Round 3 与最终轮使用构建树中的 exploded
-`jdk`。原始 JSON 的 `jvm` 字段和环境文件完整保留了这一差异。因此，上述命令是修正后的
-统一复现命令，而不是对历史命令的逐字复述。
+## 实现迭代与评审修复
 
-这项差异不改变本报告的主要可确认结论：`GRAPH serialize` 的 B/op 下降与源码所消除的
-数组分配精确对应，SMALL/CUSTOM 的分配量也回到基线。不过，所有跨 2.1/2.3 的微秒级
-耗时差异都只能视为观测值，不能作为严格受控的加速或回退证据。仓库现在会强制使用当前
-Kona 工作树对应的 `images/jdk`，校验 JDK `SOURCE` 修订，并记录可执行文件和模块镜像
-哈希，防止新实验再次混用产物。
+历史候选轮次保留在 `results/task-2.3-round1` 至 `round3`，用于追溯 Codex 的决策过程：
 
-正式输出为：
+| 阶段 | Kona 提交 | 设计 | 历史观测 |
+|---|---|---|---|
+| Round 1 | `122f6b52a` | 单个深度二维缓存 | GRAPH 分配下降，SMALL 多 24 B 固定容器 |
+| Round 2 | `9fa7ed6fa` | 根缓存与嵌套缓存分成两字段 | 第二个引用字段使 CUSTOM 多分配 8 B |
+| Round 3 | `53975e470` | 单字段惰性状态 | 恢复浅层分配，但增加状态判断 |
+| 原最终 | `cb9164b6b` | 根层不缓存，只缓存嵌套层 | 保留单个对象图内的复用收益 |
+| 评审修复 | `0c13d1af7` | 顶层写入结束时释放嵌套缓存 | 消除长生命周期流保留历史最大容量的风险 |
 
-```text
-# JMH version: 1.37
-# Warmup: 5 iterations, 1 s each
-# Measurement: 5 iterations, 1 s each
-# Fork: 1 of 3 ... 3 of 3
-# Run complete. Total time: 00:04:35
-Benchmark result is saved to results/task-2.3-final/jmh-result.json
-```
-
-JMH 输出中的 `sun.misc.Unsafe::objectFieldOffset` 终止弃用警告来自 JMH 1.37 自身，基准
-仍完整结束并生成了九项 JSON，不是 Kona 修改的测试失败。
-
-## 第一轮结果与 Codex 分析
-
-Round 1 输入是任务 2.2 提交 `122f6b52a`。完整结果位于
-[`results/task-2.3-round1/`](../../results/task-2.3-round1/README.md)。与任务 2.1 基线
-相比，关键写路径结果为：
-
-| 场景 | 基线耗时 | Round 1 耗时 | 基线分配 | Round 1 分配 | Codex 判断 |
-|---|---:|---:|---:|---:|---|
-| `serialize SMALL` | 0.398 ± 0.002 | 0.395 ± 0.001 | 6,624 | 6,648 | 多出 24 B 固定容器 |
-| `serialize GRAPH` | 5.589 ± 0.124 | 5.927 ± 0.285 | 18,664 | 16,344 | 分配 -12.43%，耗时点估计 +6.04% |
-| `serialize CUSTOM` | 0.366 ± 0.004 | 0.362 ± 0.001 | 6,560 | 6,560 | 没有默认字段缓存，不受影响 |
-
-Codex 从数字和源码得出三点：
-
-1. 任务 2.2 的深度缓存确实消除了对象图中大量短命 `Object[]`；
-2. 任何浅对象也会创建 `Object[][]` 容器，所以 SMALL 固定多分配 24 B；
-3. TLAB 中创建小数组成本很低，而每个对象都执行深度索引、清理和状态判断，可能抵消
-   部分 CPU 收益，不能只看分配量宣布加速。
-
-读取路径源码未改，因此其差异不用于评价优化。原始 JSON 还显示 `deserialize GRAPH` 的
-分配量按 fork 落在约 32,944、36,152 或 36,176 B/op 的离散簇：基线前两个 fork 是
-32,944，而第三个是 36,176；Round 1 三个 fork 都是 32,944。聚合平均数因此会产生看似
-明显但不可归因的变化。
-
-## 根据分析进行的改进
-
-实验保留了每个正式中间版本，以免只展示成功结果：
-
-| 阶段 | Kona 提交 | 设计 | SMALL B/op | GRAPH B/op | GRAPH us/op |
-|---|---|---|---:|---:|---:|
-| 2.1 基线 | 基线环境文件记录 | 每对象新建数组 | 6,624 | 18,664 | 5.589 ± 0.124 |
-| Round 1 | `122f6b52a` | 单个深度二维缓存 | 6,648 | 16,344 | 5.927 ± 0.285 |
-| Round 2 | `9fa7ed6fa` | 根缓存与嵌套缓存分成两个字段 | 6,632 | 16,328 | 5.974 ± 0.172 |
-| Round 3 | `53975e470` | 单字段惰性升级为状态对象 | 6,624 | 16,344 | 5.905 ± 0.166 |
-| 最终 | `cb9164b6b` | 根层不缓存，只缓存嵌套层；异常才批量清理 | 6,624 | 16,320 | 5.682 ± 0.151 |
-
-Round 2 暴露出第二个引用字段会使 `ObjectOutputStream` 实例增大 8 B，CUSTOM 也从
-6,560 增到 6,568 B/op。Round 3 用一个多态字段消除了浅层分配，但每个对象增加了
-`instanceof` 和状态解包。最终方案利用“每次 JMH 操作都会新建对象流”的事实：根缓存只
-使用一次，没有复用价值；仅在发生嵌套默认序列化时创建二维缓存，既简化热路径，也保留
-对象图复用收益。Round 1、2、3 的完整 JSON 均在 `results/` 中，属于负面结果与决策证据。
+Round 1–3 的环境清单没有 schema 2 的 JDK 二进制哈希，因此现在明确标记为 legacy
+候选决策证据，不作为当前最终性能结论。正式结论只使用重新生成的 2.1 基线与 2.3 最终结果。
 
 Kona 最终实现修改：
 
-- `src/java.base/share/classes/java/io/ObjectOutputStream.java`：嵌套深度缓存、容量增长、
-  正常路径逐槽清空、异常路径剩余区间清理；
-- `test/jdk/java/io/Serializable/fieldValuesBuffer/FieldValuesBuffer.java`：验证字段快照
-  语义，并验证 100 层递归链可正确往返。
+- `ObjectOutputStream.java`：嵌套深度缓存、容量增长、逐槽引用清理、异常路径剩余区间清理，
+  并在顶层 `writeObject0` 返回时释放整个嵌套缓存；
+- `FieldValuesBuffer.java`：验证字段快照语义、100 层递归链正确往返，以及顶层写入后
+  `nestedObjFieldVals` 已释放。
 
 序列化格式、字段顺序和“先读取全部字段，再递归写出”的快照语义均未改变。
 
-## 最终完整结果
+## 当前正式完整结果
 
-下表直接由基线、Round 1 和最终 JSON 按操作/载荷配对生成。耗时和分配均越低越好；
-变化列以任务 2.1 基线为参照。
+下表直接由重测的基线和最终 JSON 按操作/载荷配对。耗时和分配均越低越好；
+变化列以当前任务 2.1 基线为参照。
 
-| 操作 | 载荷 | 基线 us/op | Round 1 us/op | 最终 us/op | 最终耗时变化 | 基线 B/op | Round 1 B/op | 最终 B/op | 最终分配变化 |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `serialize` | SMALL | 0.398 ± 0.002 | 0.395 ± 0.001 | 0.408 ± 0.016 | +2.45% | 6,624 | 6,648 | 6,624 | +0 (+0.00%) |
-| `serialize` | GRAPH | 5.589 ± 0.124 | 5.927 ± 0.285 | 5.682 ± 0.151 | +1.66% | 18,664 | 16,344 | 16,320 | -2,344 (-12.56%) |
-| `serialize` | CUSTOM | 0.366 ± 0.004 | 0.362 ± 0.001 | 0.362 ± 0.001 | -1.15% | 6,560 | 6,560 | 6,560 | 0 (0.00%) |
-| `deserialize` | SMALL | 1.152 ± 0.011 | 1.143 ± 0.008 | 1.122 ± 0.006 | -2.61% | 3,653 | 3,664 | 3,669 | +16 (+0.44%) |
-| `deserialize` | GRAPH | 11.452 ± 0.120 | 11.268 ± 0.049 | 10.588 ± 0.289 | -7.54% | 34,021 | 32,944 | 36,160 | +2,139 (+6.29%) |
-| `deserialize` | CUSTOM | 0.681 ± 0.008 | 0.673 ± 0.008 | 0.669 ± 0.010 | -1.69% | 2,840 | 2,848 | 2,848 | +8 (+0.28%) |
-| `roundTrip` | SMALL | 1.594 ± 0.012 | 1.600 ± 0.017 | 1.572 ± 0.014 | -1.39% | 10,296 | 10,328 | 10,312 | +16 (+0.16%) |
-| `roundTrip` | GRAPH | 17.866 ± 0.345 | 18.225 ± 0.931 | 16.535 ± 0.029 | -7.45% | 54,840 | 52,520 | 52,496 | -2,344 (-4.27%) |
-| `roundTrip` | CUSTOM | 1.096 ± 0.003 | 1.111 ± 0.009 | 1.088 ± 0.024 | -0.65% | 9,392 | 9,392 | 9,392 | 0 (0.00%) |
+| 操作 | 载荷 | 基线 us/op | 最终 us/op | 耗时变化 | 基线 B/op | 最终 B/op | 分配变化 |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `serialize` | SMALL | 0.407 ± 0.008 | 0.427 ± 0.061 | +4.85% | 6,624 | 6,624 | 0 (+0.00%) |
+| `serialize` | GRAPH | 6.077 ± 0.216 | 6.284 ± 0.029 | +3.40% | 18,664 | 16,320 | -2,344 (-12.56%) |
+| `serialize` | CUSTOM | 0.374 ± 0.010 | 0.366 ± 0.003 | -2.15% | 6,560 | 6,560 | 0 (0.00%) |
+| `deserialize` | SMALL | 1.162 ± 0.002 | 1.196 ± 0.031 | +2.93% | 3,664 | 3,661 | -3 (-0.07%) |
+| `deserialize` | GRAPH | 11.541 ± 0.229 | 12.563 ± 0.550 | +8.85% | 34,013 | 34,021 | +8 (+0.02%) |
+| `deserialize` | CUSTOM | 0.702 ± 0.012 | 0.765 ± 0.063 | +8.94% | 2,832 | 2,848 | +16 (+0.56%) |
+| `roundTrip` | SMALL | 1.613 ± 0.015 | 1.888 ± 0.283 | +17.03% | 10,304 | 10,312 | +8 (+0.08%) |
+| `roundTrip` | GRAPH | 18.578 ± 1.214 | 19.711 ± 0.754 | +6.10% | 54,832 | 52,496 | -2,336 (-4.26%) |
+| `roundTrip` | CUSTOM | 1.126 ± 0.025 | 1.168 ± 0.095 | +3.71% | 9,392 | 9,392 | 0 (0.00%) |
 
-可确认的结论是 GRAPH 写路径分配下降 12.56%，浅层写路径没有额外分配，且 GRAPH 写
-耗时没有统计上可确认的回退。反序列化及其对 roundTrip 的影响作为观测值保留，不作为
-代码改动的因果结论。
+可确认的结论是 GRAPH 写路径分配下降 12.56%，浅层写路径没有额外分配，且 GRAPH 写耗时
+没有统计上可确认的加速或回退。反序列化及其对 roundTrip 的影响作为观测值保留，
+不作为代码改动的因果结论。
 
 ## 正确性测试
 
-最终提交上的命令：
+最终提交上的完整命令：
 
 ```bash
 make CONF=macosx-aarch64-server-release test-only \
@@ -160,7 +105,7 @@ make CONF=macosx-aarch64-server-release test-only \
   JTREG='JOBS=4;TIMEOUT_FACTOR=4'
 ```
 
-输出：
+重新 configure 并完整干净构建后的输出：
 
 ```text
 TEST                                              TOTAL  PASS  FAIL ERROR SKIP
@@ -172,12 +117,11 @@ TEST SUCCESS
 
 ## 可审计产物
 
-- [任务 2.1 基线](../../results/task-2.1-baseline/README.md)
-- [Round 1：任务 2.2 原实现](../../results/task-2.3-round1/README.md)
-- [Round 2：双字段候选](../../results/task-2.3-round2/README.md)
-- [Round 3：惰性状态候选](../../results/task-2.3-round3/README.md)
-- [最终结果](../../results/task-2.3-final/README.md)
+- [当前任务 2.1 基线](../../results/task-2.1-baseline/README.md)：schema 2 正式结果；
+- [Round 1](../../results/task-2.3-round1/README.md)、[Round 2](../../results/task-2.3-round2/README.md)、
+  [Round 3](../../results/task-2.3-round3/README.md)：legacy 候选决策证据；
+- [当前最终结果](../../results/task-2.3-final/README.md)：schema 2 正式结果。
 
-每个目录包含 JMH JSON、环境清单和 SHA-256 校验和；`make check-results` 会验证五组
-结果的完整性、clean Kona 提交、九场景矩阵、JMH 参数和 GC 分配指标，并核对本报告中的
-最终数字。
+`make check-results` 会验证五组结果的校验和、九场景矩阵、JMH 参数和 GC 分配指标；
+对当前基线和最终结果还会强制 schema 2，校验 JMH `jvm` 路径与环境清单一致，
+并核对本报告中的正式数字。

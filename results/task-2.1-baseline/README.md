@@ -16,3 +16,6 @@ make capture-environment KONA_SRC=/path/to/clean/TencentKona-25
 
 SHA-256 校验和保存在 `SHA256SUMS` 中。运行 `make check-results` 可验证校验和、环境
 元数据、九种场景的结果矩阵和 GC 分配指标。
+
+当前文件于 2026-09-03 在 macOS 26.6.2 上重新生成，使用 schema 2 绑定
+Kona 提交 `3dfb92059520`、`images/jdk` 路径及 JDK 核心产物哈希。

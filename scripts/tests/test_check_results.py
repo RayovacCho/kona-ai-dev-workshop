@@ -46,6 +46,18 @@ class ChecksumManifestTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             check_results.check_checksums(self.result_dir)
 
+    def test_requires_schema_two_for_current_formal_results(self):
+        result_dir = next(iter(check_results.CURRENT_PROVENANCE_RESULT_DIRS))
+        with self.assertRaises(SystemExit):
+            check_results.check_required_provenance(result_dir, {})
+        check_results.check_required_provenance(
+            result_dir, {"environment_schema": "2"}
+        )
+
+    def test_allows_legacy_intermediate_results_without_schema_two(self):
+        result_dir = check_results.RESULT_ROOT / "task-2.3-round1"
+        check_results.check_required_provenance(result_dir, {})
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -25,6 +25,10 @@ REQUIRED_RESULT_DIRS = {
     RESULT_ROOT / "task-2.3-round3",
     RESULT_ROOT / "task-2.3-final",
 }
+CURRENT_PROVENANCE_RESULT_DIRS = {
+    RESULT_ROOT / "task-2.1-baseline",
+    RESULT_ROOT / "task-2.3-final",
+}
 REQUIRED_ENV = {
     "captured_at_utc",
     "os",
@@ -135,6 +139,11 @@ def check_environment(result_dir: Path) -> Dict[str, str]:
     return values
 
 
+def check_required_provenance(result_dir: Path, environment: Dict[str, str]) -> None:
+    if result_dir in CURRENT_PROVENANCE_RESULT_DIRS and environment.get("environment_schema") != "2":
+        raise SystemExit(f"正式结果必须使用 environment_schema=2：{result_dir}")
+
+
 def check_jmh(
     result_dir: Path,
     environment: Dict[str, str],
@@ -202,5 +211,6 @@ if __name__ == "__main__":
     for result_dir in RESULT_DIRS:
         check_checksums(result_dir)
         environment = check_environment(result_dir)
+        check_required_provenance(result_dir, environment)
         check_jmh(result_dir, environment, reports.get(result_dir.name))
-    print(f"正式基准产物：{len(RESULT_DIRS)} 组检查通过")
+    print(f"基准产物：{len(RESULT_DIRS)} 组检查通过")
