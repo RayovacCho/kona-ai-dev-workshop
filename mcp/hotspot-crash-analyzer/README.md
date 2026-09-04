@@ -14,7 +14,7 @@ JBS 关键词查询，防止把普通 SIGSEGV/SIGFPE 问题误认为本次受控
 
 ## 配置
 
-运行时要求 **Python 3.6 或更高版本**，不需要第三方 Python 包。
+运行时要求 **Python 3.9 或更高版本**，不需要第三方 Python 包。
 
 在支持 stdio MCP 的客户端中加入（按本机路径调整）：
 
@@ -33,14 +33,16 @@ JBS 关键词查询，防止把普通 SIGSEGV/SIGFPE 问题误认为本次受控
 
 服务 stdout 只输出一行一个 JSON-RPC 消息，诊断信息写 stderr。JBS 不可访问时，分析
 结果仍会返回解析结论和可手工打开的 `browse_url`。路径输入和文本输入都限制为 10 MiB；
-畸形 JSON-RPC 请求会收到明确的协议错误响应，不会让客户端无响应等待。
+畸形 JSON-RPC 请求会收到明确的协议错误响应，不会让客户端无响应等待。服务明确协商
+其支持的 MCP `2025-03-26` 协议版本，不会回显一个实际未实现的客户端版本。
 
 ## 验证
 
 测试使用 `tests/fixtures/` 中随仓库提交的精简 `hs_err` 样本，不依赖
 `apps/controlled-crash/crash-logs/` 中按导师要求提交的七份完整日志，也不依赖本机生成并被
-忽略的重复日志。覆盖受控崩溃、非受控原生库 SIGSEGV、JBS 搜索/详情响应解析和 MCP stdio
-调用；JBS 响应使用确定性 mock，因此 CI 不依赖外部网络。
+忽略的重复日志。覆盖受控崩溃、非受控原生库 SIGSEGV、Windows access violation、OOM、
+截断日志标记、JBS 搜索/详情响应解析和 MCP stdio 调用；JBS 响应使用确定性 mock，因此
+CI 不依赖外部网络。
 
 ```bash
 cd /path/to/kona-ai-dev-workshop/mcp/hotspot-crash-analyzer

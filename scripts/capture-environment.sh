@@ -27,6 +27,10 @@ if [[ -n "$(git -C "$KONA_SRC" status --porcelain)" ]]; then
   echo "拒绝记录含未提交修改的 Kona 工作树" >&2
   exit 2
 fi
+if [[ -n "$(git -C "$workshop_root" status --porcelain --untracked-files=no)" ]]; then
+  echo "拒绝记录含未提交修改的 workshop 工作树" >&2
+  exit 2
+fi
 
 kona_root=$(cd "$KONA_SRC" && pwd -P)
 kona_home=$(cd "$KONA_HOME" && pwd -P)
@@ -42,9 +46,11 @@ kona_commit=$(git -C "$KONA_SRC" rev-parse HEAD)
 kona_revision=${kona_commit:0:12}
 release_file="$kona_home/release"
 modules_file="$kona_home/lib/modules"
+benchmark_jar="$workshop_root/apps/serialization-jmh/build/serialization-jmh.jar"
 [[ -x "$kona_home/bin/java" ]] || { echo "缺少 $kona_home/bin/java" >&2; exit 2; }
 [[ -f "$release_file" ]] || { echo "缺少 $release_file" >&2; exit 2; }
 [[ -f "$modules_file" ]] || { echo "缺少 $modules_file" >&2; exit 2; }
+[[ -f "$benchmark_jar" ]] || { echo "缺少 $benchmark_jar；请先运行 make jmh-build" >&2; exit 2; }
 jdk_source=$(sed -n 's/^SOURCE="\(.*\)"$/\1/p' "$release_file")
 if [[ "$jdk_source" != *"git:$kona_revision"* ]]; then
   echo "JDK release 中的源码修订与 Kona HEAD 不一致" >&2
@@ -74,7 +80,7 @@ elif command -v lscpu >/dev/null 2>&1; then
 fi
 
 {
-  echo "environment_schema=2"
+  echo "environment_schema=3"
   echo "captured_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "os=$os_name $os_version"
   echo "architecture=$(uname -m)"
@@ -82,6 +88,8 @@ fi
   echo "memory=$memory"
   echo "kona_commit=$kona_commit"
   echo "kona_worktree=clean"
+  echo "workshop_commit=$(git -C "$workshop_root" rev-parse HEAD)"
+  echo "workshop_worktree=clean"
   echo "kona_home=$kona_home"
   echo "jdk_source_revision=$kona_revision"
   echo "jdk_release_sha256=$(sha256 "$release_file")"
@@ -90,6 +98,10 @@ fi
   echo "jmh_version=1.37"
   echo "benchmark_source_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/src/workshop/serialization/JavaSerializationBenchmark.java")"
   echo "dependency_lock_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/dependencies.sha256")"
+  echo "benchmark_build_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/build.sh")"
+  echo "benchmark_run_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/run.sh")"
+  echo "capture_environment_sha256=$(sha256 "$workshop_root/scripts/capture-environment.sh")"
+  echo "benchmark_jar_sha256=$(sha256 "$benchmark_jar")"
   echo "java_version=$("$kona_home/bin/java" -version 2>&1 | paste -sd '|' -)"
 } > "$output_tmp"
 

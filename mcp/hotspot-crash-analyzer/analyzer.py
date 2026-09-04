@@ -35,6 +35,12 @@ def _frames(text: str, heading: str, limit: int = 20) -> List[str]:
             break
         if re.match(r"^(?:[VvCJj]\s|v\s|\[|0x)", value):
             result.append(value)
+        elif re.match(
+            r"^(?:Java frames:|siginfo:|Registers:|Top of Stack:|"
+            r"Instructions:|Stack slot to memory mapping:|---------------)",
+            value,
+        ):
+            break
         if len(result) >= limit:
             break
     return result
@@ -69,6 +75,11 @@ def _error_details(text: str) -> Dict[str, Any]:
         re.MULTILINE,
     )
     message = message_match.group(1).strip() if message_match else None
+    oom_match = re.search(
+        r"^#\s+(Out of Memory Error \(.+?\))(?:,\s*pid=(\d+),\s*tid=(\d+))?\s*$",
+        text,
+        re.MULTILINE,
+    )
 
     if signal_match:
         return {
@@ -96,6 +107,11 @@ def _error_details(text: str) -> Dict[str, Any]:
             "pid": int(internal_match.group(3)),
             "tid": int(internal_match.group(4)),
         }
+    if oom_match:
+        result = {"kind": "out_of_memory", "message": oom_match.group(1)}
+        if oom_match.group(2):
+            result.update({"pid": int(oom_match.group(2)), "tid": int(oom_match.group(3))})
+        return result
     if "A fatal error has been detected by the Java Runtime Environment" not in text:
         raise AnalysisError("文件看起来不像 HotSpot 致命错误日志")
     return {"kind": "unknown", "message": message}
@@ -106,6 +122,8 @@ def _advice(error: Dict[str, Any], frame: Optional[Dict[str, str]]) -> List[str]
     frame_kind = frame.get("kind") if frame else None
     if error["kind"] == "signal" and frame_kind == "C":
         advice.append("对原生栈帧进行符号化，并优先检查 JNI/JVMTI 代理和原生库版本。")
+    elif error["kind"] == "out_of_memory":
+        advice.append("检查请求大小、原生内存跟踪、容器限制和系统内存压力，不要只调整 Java 堆上限。")
     elif error["kind"] in {"assertion", "guarantee", "fatal", "internal_error"}:
         advice.append("将准确的消息、源码位置和顶部 VM 栈帧与 JBS 比对；调试断言可能无法在发布版构建中复现。")
     else:
@@ -200,6 +218,7 @@ def parse_log_text(text: str, source: str = "<content>") -> Dict[str, Any]:
     return {
         "schema_version": 1,
         "source": source,
+        "log_complete": text.rstrip().endswith("END."),
         "error": error,
         "direct_cause": _direct_cause(error, frame, controlled),
         "problematic_frame": frame,

@@ -46,11 +46,10 @@ class ChecksumManifestTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             check_results.check_checksums(self.result_dir)
 
-    def test_requires_schema_two_for_current_and_new_results(self):
+    def test_requires_schema_two_for_current_results_and_three_for_new_results(self):
         result_dirs = (
             check_results.RESULT_ROOT / "task-2.1-baseline",
             check_results.RESULT_ROOT / "task-2.3-final",
-            check_results.RESULT_ROOT / "reproductions" / "new-run",
         )
         for result_dir in result_dirs:
             with self.subTest(result_dir=result_dir):
@@ -59,6 +58,14 @@ class ChecksumManifestTest(unittest.TestCase):
                 check_results.check_required_provenance(
                     result_dir, {"environment_schema": "2"}
                 )
+        new_result = check_results.RESULT_ROOT / "reproductions" / "new-run"
+        with self.assertRaises(SystemExit):
+            check_results.check_required_provenance(
+                new_result, {"environment_schema": "2"}
+            )
+        check_results.check_required_provenance(
+            new_result, {"environment_schema": "3"}
+        )
 
     def test_allows_legacy_intermediate_results_without_schema_two(self):
         result_dir = check_results.RESULT_ROOT / "task-2.3-round1"
@@ -79,6 +86,21 @@ class ChecksumManifestTest(unittest.TestCase):
         }
         with self.assertRaises(SystemExit):
             check_results.check_comparable_environments(environments)
+
+    def test_accepts_complete_three_by_five_raw_data(self):
+        metric = {"rawData": [[1.0] * 5 for _ in range(3)]}
+        check_results.check_raw_data(metric, "benchmark")
+
+    def test_rejects_incomplete_raw_data(self):
+        metric = {"rawData": [[1.0] * 5 for _ in range(2)]}
+        with self.assertRaises(SystemExit):
+            check_results.check_raw_data(metric, "benchmark")
+
+    def test_rejects_non_finite_raw_data(self):
+        metric = {"rawData": [[1.0] * 5 for _ in range(3)]}
+        metric["rawData"][1][2] = float("nan")
+        with self.assertRaises(SystemExit):
+            check_results.check_raw_data(metric, "benchmark")
 
 
 if __name__ == "__main__":

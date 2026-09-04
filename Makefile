@@ -3,7 +3,7 @@ PYTHON ?= python3
 
 KONA_CONF ?= macosx-aarch64-server-release
 KONA_HOME ?= $(if $(KONA_SRC),$(KONA_SRC)/build/$(KONA_CONF)/images/jdk,)
-JTREG_TESTS := test/jdk/java/io/Serializable test/jdk/java/io/ObjectInputStream test/jdk/java/io/ObjectStreamClass
+JTREG_TESTS := test/jdk/java/io/Serializable test/jdk/java/io/Externalizable test/jdk/java/io/ObjectInputStream test/jdk/java/io/ObjectStreamClass
 RESULT_DIR ?= results/task-2.1-baseline
 BASELINE_DIR := $(abspath $(RESULT_DIR))
 

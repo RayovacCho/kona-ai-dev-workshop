@@ -47,6 +47,16 @@ class CrashLogManifestTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             check_crash_logs.check_manifest(self.log_dir, self.expected)
 
+    def test_accepts_non_sensitive_environment_names(self):
+        text = "Environment Variables:\nPATH=/usr/bin\nLANG=zh_CN.UTF-8\n\nSystem:\n"
+        check_crash_logs.check_environment_privacy(text, self.log)
+
+    def test_rejects_sensitive_environment_name_without_exposing_value(self):
+        text = "Environment Variables:\nSERVICE_TOKEN=do-not-print\n\nSystem:\n"
+        with self.assertRaises(SystemExit) as raised:
+            check_crash_logs.check_environment_privacy(text, self.log)
+        self.assertNotIn("do-not-print", str(raised.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

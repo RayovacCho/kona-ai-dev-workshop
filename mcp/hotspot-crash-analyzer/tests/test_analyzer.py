@@ -73,6 +73,55 @@ class AnalyzerTest(unittest.TestCase):
         response = handle([])
         self.assertEqual(-32600, response["error"]["code"])
 
+    def test_initialize_negotiates_supported_protocol(self):
+        response = handle(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {"protocolVersion": "2099-01-01"},
+            }
+        )
+        self.assertEqual("2025-03-26", response["result"]["protocolVersion"])
+
+    def test_initialize_rejects_non_object_params(self):
+        response = handle(
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": []}
+        )
+        self.assertEqual(-32602, response["error"]["code"])
+
+    def test_native_frame_parser_stops_at_next_section(self):
+        text = """# A fatal error has been detected by the Java Runtime Environment:
+# SIGSEGV (0xb) at pc=0x1, pid=1, tid=2
+
+Native frames: (J=compiled Java code, A=aot compiled Java code, j=interpreted, Vv=VM code, C=native code)
+Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)
+j  unrelated.Frame.run()V+0
+"""
+        result = parse_log_text(text)
+        self.assertEqual([], result["native_frames"])
+        self.assertFalse(result["log_complete"])
+
+    def test_parses_windows_access_violation_header(self):
+        text = """# A fatal error has been detected by the Java Runtime Environment:
+# EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x1, pid=12, tid=34
+END.
+"""
+        result = parse_log_text(text)
+        self.assertEqual("signal", result["error"]["kind"])
+        self.assertEqual("EXCEPTION_ACCESS_VIOLATION", result["error"]["signal"])
+        self.assertTrue(result["log_complete"])
+
+    def test_classifies_out_of_memory_error(self):
+        text = """# A fatal error has been detected by the Java Runtime Environment:
+# Out of Memory Error (allocation.cpp:123), pid=12, tid=34
+END.
+"""
+        result = parse_log_text(text)
+        self.assertEqual("out_of_memory", result["error"]["kind"])
+        self.assertEqual(12, result["error"]["pid"])
+        self.assertIn("allocation.cpp", result["direct_cause"]["summary"])
+
     def test_non_controlled_native_crash_searches_jbs(self):
         candidate = {
             "query": "crash_in_native_library",

@@ -150,7 +150,7 @@ GPT-5.6 的最终判读是：7 份日志分别记录预期的 assertion、guaran
 工具枚举和工具调用。真实 JBS 查询依赖网络；断网时服务降级返回手工查询 URL，不影响
 本地直接原因分析。
 
-JBS 集成测试分别使用 `VMError::controlled_crash`、
-`ThreadsListHandleInErrorHandlingTest` 和 `VMError::report_and_die` 作为检索签名，并用
-`get_jbs_issue` 读取候选的描述、状态、resolution 和版本字段。该测试只验证关联能力；
-最终是否匹配仍由技能按日志特征逐项判断。
+JBS 集成测试使用普通原生崩溃符号 `crash_in_native_library` 验证自动查询路径，并验证
+受控崩溃只生成 `VMError::controlled_crash` 的精确背景查询 URL；`get_jbs_issue` 测试覆盖
+候选的描述、状态、resolution 和版本字段。真实日志中的 `ThreadsListHandle` 等签名由
+报告人工核验，当前自动化测试不把它们误写成已执行的联网检索用例。

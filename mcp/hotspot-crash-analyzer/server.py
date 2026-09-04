@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 from analyzer import AnalysisError, analyze_file, get_jbs_issue, parse_log_file, parse_log_text, search_jbs
 
 SERVER_INFO = {"name": "hotspot-crash-analyzer", "version": "1.0.0"}
+SUPPORTED_PROTOCOL_VERSION = "2025-03-26"
 
 TOOLS = [
     {
@@ -106,12 +107,19 @@ def handle(message: Any) -> Optional[Dict[str, Any]]:
     if request_id is None:
         return None
     if method == "initialize":
-        requested = (message.get("params") or {}).get("protocolVersion", "2025-03-26")
+        params = message.get("params", {})
+        if params is None:
+            params = {}
+        if not isinstance(params, dict):
+            return _protocol_error(request_id, -32602, "initialize 的 params 必须是对象")
+        requested = params.get("protocolVersion", SUPPORTED_PROTOCOL_VERSION)
+        if not isinstance(requested, str):
+            return _protocol_error(request_id, -32602, "protocolVersion 必须是字符串")
         return {
             "jsonrpc": "2.0",
             "id": request_id,
             "result": {
-                "protocolVersion": requested,
+                "protocolVersion": SUPPORTED_PROTOCOL_VERSION,
                 "capabilities": {"tools": {"listChanged": False}},
                 "serverInfo": SERVER_INFO,
                 "instructions": "先解析 hs_err 证据。将 JBS 搜索结果视为尚未核验的候选项。",

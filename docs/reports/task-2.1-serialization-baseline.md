@@ -2,7 +2,7 @@
 
 ## 结论
 
-Kona JDK 25 release 镜像构建成功，序列化相关 jtreg 测试共 **160 项全部通过**。
+Kona JDK 25 release 镜像构建成功，序列化相关 jtreg 测试共 **162 项全部通过**。
 独立 JMH 程序完成 18 项基准，覆盖中英文小对象、中英文 100 元素对象图、4096 元素
 中英文混合对象数组和自定义序列化。在本机上，英文小对象完整往返为
 **1.601 ± 0.010 us/op**，英文对象图为 **17.913 ± 0.224 us/op**，大对象数组为
@@ -43,12 +43,13 @@ make jtreg-baseline
 | 测试组 | 总数 | 通过 | 失败/错误/跳过 |
 |---|---:|---:|---:|
 | `java/io/Serializable` | 150 | 150 | 0 |
+| `java/io/Externalizable` | 2 | 2 | 0 |
 | `java/io/ObjectInputStream` | 4 | 4 | 0 |
 | `java/io/ObjectStreamClass` | 6 | 6 | 0 |
-| **合计** | **160** | **160** | **0** |
+| **合计** | **162** | **162** | **0** |
 
 `jtreg-baseline` 会显式构建 Java 测试库和 JDK jtreg native 测试镜像，再使用
-`test-only` 运行三个选定目录。完整本地报告位于 Kona 构建目录的
+`test-only` 运行四个选定目录。完整本地报告位于 Kona 构建目录的
 `build/macosx-aarch64-server-release/test-results/jtreg_test_jdk_java_io_*/`。
 
 ## JMH 设计

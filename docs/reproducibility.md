@@ -16,7 +16,7 @@
 
 1. Kona 工作树 `git status --porcelain` 为空；
 2. 报告和环境文件记录完整 Kona commit；
-3. 环境文件记录 JMH 源码与依赖锁文件的 SHA-256；
+3. 环境文件记录 workshop/Kona 提交、JMH 源码、执行脚本、基准 JAR 与依赖锁文件的 SHA-256；
 4. 使用 release/product JDK 测性能，fastdebug JDK 只用于 WhiteBox/诊断测试；
 5. 基准前后使用相同硬件、JMH 参数、数据模型和 JDK 配置；
 6. JMH 至少 3 forks、5 次预热、5 次测量，并记录 `-prof gc` 分配指标；
@@ -28,8 +28,8 @@
     阶段完成内容级往返校验。
 
 根目录 `Makefile` 会拒绝 dirty Kona 工作树、错误的 `KONA_HOME`，以及源码修订不匹配的
-JDK 镜像。环境清单 schema 2 同时记录 `release`、`bin/java` 和 `lib/modules` 的 SHA-256，
-将源码提交与被测产物绑定起来。
+JDK 镜像。新生成的环境清单 schema 3 同时记录 `release`、`bin/java`、`lib/modules`、
+基准构建/运行脚本和实际运行 JAR 的 SHA-256，将两侧源码提交与被测产物绑定起来。
 
 ## 环境变量
 
@@ -64,12 +64,15 @@ profiler 的正式 JMH，并采集环境。目标默认拒绝覆盖已有结果�
 
 `make check-results` 会递归发现 `results/` 下的基准结果和新增复现实验，要求校验和清单
 恰好包含 `jmh-result.json` 与 `environment.txt`，并验证 JMH 使用的 JVM 与环境清单一致。
-它还会拒绝重复或空的环境字段、无效数值，并验证每一对正式基线与最终结果使用相同的 OS、
+它还会拒绝重复或空的环境字段、无效数值、错误的 3×5 原始样本形状或指标单位，并验证
+报告数字出现在对应场景行、每一对正式基线与最终结果使用相同的 OS、
 架构、CPU 和内存；场景矩阵依据环境中绑定的基准源码版本校验。`make check-crash-logs`
 则验证提交的七份完整崩溃日志及其 `SHA256SUMS`、错误
-类别、用例编号和受控 WhiteBox 调用链。这两个校验均包含在 `make check` 和 CI 中。
-除明确列出的 Round 1–3 legacy 候选外，当前正式基线、最终结果以及以后新增的复现实验
-都必须使用 `environment_schema=2`。Round 1–3 只作为历史候选的决策证据，不再作为
+类别、用例编号和受控 WhiteBox 调用链，并拒绝疑似密钥、令牌、密码等敏感环境变量名。
+原始诊断日志和 JMH 元数据可能包含采集机器的绝对路径，这是复现来源的一部分，不应被
+误认为跨机器通用路径。这两个校验均包含在 `make check` 和 CI 中。
+当前任务 2.1/2.3 归档结果保留 `environment_schema=2`；以后新增的正式复现实验必须使用
+`environment_schema=3`。Round 1–3 只作为历史候选的决策证据，不再作为
 满足当前产物绑定规则的正式性能证据；该例外按精确目录名限制，不能被新结果继承。
 
 ## 结果解释

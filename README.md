@@ -3,7 +3,7 @@
 本仓库是课程作业的**规划、代码、报告与工具**集合，对应两项工作：
 
 1. 用 AI 辅助分析 JVM 崩溃  
-2. 加速 Java 序列化  
+2. 优化 Java 序列化性能
 
 JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/RayovacCho/TencentKona-25) 中完成。本仓库不包含完整 JDK 源码，保存规划与报告、演示程序、智能体技能、MCP、正式基准结果以及复现自动化。
 
@@ -26,7 +26,8 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 
 ## 快速开始
 
-仓库内的 Python 工具要求 **Python 3.6 或更高版本**，且不依赖第三方 Python 包。
+仓库内的 Python 工具要求 **Python 3.9 或更高版本**，且不依赖第三方 Python 包；CI 同时
+覆盖最低支持版本 3.9 和当前版本 3.13。
 验证仓库内的脚本、MCP 测试、七份完整崩溃日志和已提交的正式基准结果：
 
 ```bash
@@ -82,7 +83,7 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 
 ---
 
-## 任务 2：序列化加速
+## 任务 2：序列化性能优化
 
 ### 2.1 获取测试基准
 
@@ -112,7 +113,8 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 [完整分析报告](docs/reports/task-2.3-serialization-followup.md)和
 [最终机器可读结果](results/task-2.3-final/README.md)。中间候选数据保存在
 `results/task-2.3-round1/` 至 `task-2.3-round3/`，仅用于审计 Codex 的改进依据，
-不作为当前正式性能结论。
+不作为当前正式性能结论；反向顺序聚焦复测原始数据保存在
+[`results/task-2.3-repeat`](results/task-2.3-repeat/README.md)。
 
 根据导师评审，正式 JMH 已自然扩充为 18 项，覆盖中英文小对象、中英文对象图、4096 元素
 中英文混合对象数组和自定义序列化，并完成同机 A/B 与反向复测。结论是目标写路径分配

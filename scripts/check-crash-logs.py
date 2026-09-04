@@ -25,6 +25,10 @@ EXPECTED_LOGS: Mapping[str, Dict[str, object]] = {
     "hs_err_pid16594.log": {"case": 17, "kind": "fatal", "message": "nested ThreadsListHandle"},
     "hs_err_pid16599.log": {"case": 99, "kind": "fatal", "message": "Crashing with number 99"},
 }
+SENSITIVE_ENV_NAME = re.compile(
+    r"(?:TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|COOKIE|AUTHORIZATION|API_KEY|PRIVATE_KEY)",
+    re.IGNORECASE,
+)
 
 
 def sha256(path: Path) -> str:
@@ -87,6 +91,7 @@ def check_log(path: Path, expected: Mapping[str, object]) -> None:
     for heading in ("VM Arguments:", "Environment Variables:"):
         if heading not in text:
             raise SystemExit(f"崩溃日志缺少诊断章节 {heading}：{path}")
+    check_environment_privacy(text, path)
 
     result = parse_log_text(text, str(path))
     error = result["error"]
@@ -107,6 +112,19 @@ def check_log(path: Path, expected: Mapping[str, object]) -> None:
     case = expected["case"]
     if not re.search(rf"workshop\.crash\.ControlledCrash\s+{case}(?:\s|$)", command_line):
         raise SystemExit(f"日志命令行与用例 {case} 不匹配：{path}")
+
+
+def check_environment_privacy(text: str, path: Path) -> None:
+    section = text.split("Environment Variables:", 1)[1]
+    for line in section.splitlines():
+        value = line.strip()
+        if not value:
+            continue
+        if value.startswith("System:") or value.startswith("---------------"):
+            break
+        name, separator, _ = value.partition("=")
+        if separator and SENSITIVE_ENV_NAME.search(name):
+            raise SystemExit(f"崩溃日志包含疑似敏感环境变量 {name}：{path}")
 
 
 def main() -> None:
