@@ -8,6 +8,7 @@
 |---|---|---|
 | [任务 2.1 基线](task-2.1-baseline/README.md) | `3dfb92059520` | schema 2，release `images/jdk` |
 | [任务 2.3 最终](task-2.3-final/README.md) | `0c13d1af75d6` | schema 2，release `images/jdk` |
+| [GRAPH 反向复测](task-2.3-repeat/README.md) | 基线与最终提交 | 原始 JMH JSON + SHA-256 |
 
 正式性能结论使用任务 2.1 与 2.3 两组于 2026-09-04 顺序重测的数据，均包含 18 项中英文、
 对象图、大对象数组和自定义序列化场景，并在相同硬件、macOS 与 JMH 参数下完成。
@@ -25,5 +26,6 @@
 ## 新增复现实验
 
 新的实验应放入 `results/reproductions/<唯一目录>/`。除上述三个精确命名的 legacy
-目录外，`make check-results` 会要求所有结果使用 schema 2，并校验 Kona 提交、JDK
-`SOURCE`、`release`、`bin/java`、`lib/modules`、JMH 源码和依赖锁定信息。
+目录外，`make check-results` 会要求所有新结果使用 schema 3，并校验 workshop/Kona 提交、
+JDK `SOURCE`、`release`、`bin/java`、`lib/modules`、JMH 源码、执行脚本、实际基准 JAR
+和依赖锁定信息。当前两组正式归档结果保留生成时使用的 schema 2。

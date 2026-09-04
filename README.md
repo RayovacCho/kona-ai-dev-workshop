@@ -101,7 +101,8 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 
 已完成：[优化规划](docs/task-2.2-plan.md)、
 [实现与测试报告](docs/reports/task-2.2-codex-serialization-optimization.md)和
-[Kona PR #1](https://github.com/RayovacCho/TencentKona-25/pull/1)。
+[Kona PR #1](https://github.com/RayovacCho/TencentKona-25/pull/1)。基线/优化版本的双向读取和
+字节一致性由[跨版本兼容程序](apps/serialization-compatibility/README.md)验证。
 
 ### 2.3 进一步改进
 
@@ -139,7 +140,8 @@ kona-ai-dev-workshop/
 └── mcp/                   ← MCP 服务器源码
 ```
 
-各目录会随作业推进逐步填入文件，任务状态以本文末尾的进度表和对应报告为准。
+目录中的规划、实现入口、原始证据和最终报告已经形成闭环，当前状态以对应报告和自动
+校验结果为准。
 
 ---
 
@@ -193,7 +195,5 @@ release 性能基准应使用“快速开始”中的统一 Make 命令，具体
 | 2.1 jtreg / JMH 基准 | 已完成（[报告](docs/reports/task-2.1-serialization-baseline.md) / [JMH](apps/serialization-jmh/README.md)） |
 | 2.2 Codex 方案与实现 | 已完成（[规划](docs/task-2.2-plan.md) / [报告](docs/reports/task-2.2-codex-serialization-optimization.md)） |
 | 2.3 JMH 对比与再优化 | 已完成（[规划](docs/task-2.3-plan.md) / [报告](docs/reports/task-2.3-serialization-followup.md) / [结果](results/task-2.3-final/README.md)） |
-
-完成一项后把上表改为「进行中」或「已完成」，并在 `docs/` 中补对应文档链接。
 
 ---

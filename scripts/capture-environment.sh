@@ -97,6 +97,7 @@ fi
   echo "modules_sha256=$(sha256 "$modules_file")"
   echo "jmh_version=1.37"
   echo "benchmark_source_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/src/workshop/serialization/JavaSerializationBenchmark.java")"
+  echo "focused_benchmark_source_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/src/workshop/serialization/SerializationFocusedBenchmark.java")"
   echo "dependency_lock_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/dependencies.sha256")"
   echo "benchmark_build_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/build.sh")"
   echo "benchmark_run_sha256=$(sha256 "$workshop_root/apps/serialization-jmh/run.sh")"

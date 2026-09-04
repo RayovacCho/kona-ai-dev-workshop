@@ -50,6 +50,8 @@ Linux 或其他配置通过覆盖 `KONA_CONF` 处理。
 ```bash
 make check
 make check-crash-logs
+BASELINE_JAVA_HOME=/path/to/baseline/images/jdk \
+OPTIMIZED_JAVA_HOME=/path/to/optimized/images/jdk make wire-compatibility
 make configure-kona
 make jdk-images
 make jtreg-baseline
@@ -57,6 +59,9 @@ RESULT_DIR=results/<新目录> make jmh-baseline
 RESULT_DIR=results/<新目录> make capture-environment
 make check-results
 ```
+
+`wire-compatibility` 会让两套 JDK 交叉读取包含共享引用、循环引用、中英文内容和 unshared
+对象的流，并要求两边输出字节完全一致。
 
 `RESULT_DIR=results/<新目录> make benchmark` 会依次构建镜像、跑 jtreg、执行带 GC
 profiler 的正式 JMH，并采集环境。目标默认拒绝覆盖已有结果；只有明确重建同一基准时才

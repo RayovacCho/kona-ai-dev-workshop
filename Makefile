@@ -9,14 +9,15 @@ BASELINE_DIR := $(abspath $(RESULT_DIR))
 
 .NOTPARALLEL: benchmark
 
-.PHONY: check test-mcp test-results-validator check-results check-crash-logs jmh-build jmh-smoke verify-clean-kona \
+.PHONY: check test-mcp test-results-validator check-results check-crash-logs jmh-build jmh-smoke jmh-focused-smoke wire-compatibility verify-clean-kona \
         verify-kona-home configure-kona \
         jdk-images jtreg-baseline jmh-baseline capture-environment \
         baseline-checksums benchmark
 
 check: test-mcp test-results-validator check-results check-crash-logs
 	@bash -n apps/controlled-crash/build.sh apps/controlled-crash/run-crash.sh \
-	  apps/controlled-crash/test-crashes.sh apps/serialization-jmh/build.sh \
+	  apps/controlled-crash/test-crashes.sh apps/serialization-compatibility/run.sh \
+	  apps/serialization-jmh/build.sh \
 	  apps/serialization-jmh/run.sh scripts/capture-environment.sh
 	@git diff --check
 
@@ -41,6 +42,18 @@ jmh-smoke: jmh-build
 	@KONA_HOME="$(KONA_HOME)" \
 	  JMH_RESULT_FILE="$(CURDIR)/apps/serialization-jmh/results/ci-smoke.json" \
 	  apps/serialization-jmh/run.sh -f 1 -wi 1 -i 1 -w 100ms -r 100ms
+
+jmh-focused-smoke: jmh-build
+	@mkdir -p apps/serialization-jmh/results
+	@KONA_HOME="$(KONA_HOME)" \
+	  JMH_INCLUDE='workshop.serialization.SerializationFocusedBenchmark' \
+	  JMH_RESULT_FILE="$(CURDIR)/apps/serialization-jmh/results/ci-focused-smoke.json" \
+	  apps/serialization-jmh/run.sh -f 1 -wi 1 -i 1 -w 100ms -r 100ms
+
+wire-compatibility:
+	@BASELINE_JAVA_HOME="$(BASELINE_JAVA_HOME)" \
+	  OPTIMIZED_JAVA_HOME="$(OPTIMIZED_JAVA_HOME)" \
+	  apps/serialization-compatibility/run.sh
 
 verify-clean-kona:
 	@test -n "$(KONA_SRC)" || { echo "请设置 KONA_SRC" >&2; exit 2; }

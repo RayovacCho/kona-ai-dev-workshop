@@ -51,7 +51,8 @@ CP="$LIB/jmh-core-$JMH_VERSION.jar:$LIB/jopt-simple-5.0.4.jar:$LIB/commons-math3
   -cp "$CP" \
   -processorpath "$LIB/jmh-generator-annprocess-$JMH_VERSION.jar:$LIB/jmh-core-$JMH_VERSION.jar" \
   -d "$CLASSES" \
-  "$ROOT/src/workshop/serialization/JavaSerializationBenchmark.java"
+  "$ROOT/src/workshop/serialization/JavaSerializationBenchmark.java" \
+  "$ROOT/src/workshop/serialization/SerializationFocusedBenchmark.java"
 "$JDK_HOME/bin/jar" --create --file "$ROOT/build/serialization-jmh.jar" -C "$CLASSES" .
 
 echo "已构建 $ROOT/build/serialization-jmh.jar"

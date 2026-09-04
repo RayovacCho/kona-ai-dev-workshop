@@ -33,3 +33,5 @@ jobs:
           distribution: temurin
           java-version: "25"
       - run: make jmh-smoke KONA_HOME="$JAVA_HOME"
+      - run: make jmh-focused-smoke KONA_HOME="$JAVA_HOME"
+      - run: make wire-compatibility BASELINE_JAVA_HOME="$JAVA_HOME" OPTIMIZED_JAVA_HOME="$JAVA_HOME"

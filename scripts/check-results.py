@@ -61,6 +61,7 @@ PROVENANCE_ENV_V3 = {
     "benchmark_run_sha256",
     "capture_environment_sha256",
     "benchmark_jar_sha256",
+    "focused_benchmark_source_sha256",
 }
 BENCHMARK_SOURCE = (
     ROOT

@@ -12,6 +12,12 @@
 新建对象流，结果包含真实的流头、类描述符和句柄表成本，不会受到跨对象流缓存的影响。
 每类载荷在 JMH setup 阶段还会执行内容级往返校验，避免仅凭类型相同掩盖字段或数组回归。
 
+同目录还包含 `SerializationFocusedBenchmark`，用于下一轮观测写路径本身：
+
+- `serializePreSized` 按已知输出大小预分配缓冲区，减少扩容噪声；
+- `serializeSteadyState` 复用 `ObjectOutputStream` 并在每次调用前 reset，减少流构造噪声；
+- 聚焦英文/中文对象图和 4096 元素数组，不改变已经归档的 18 项正式结果。
+
 ## 运行
 
 设置 Kona release 镜像后运行：
@@ -26,6 +32,14 @@ export KONA_HOME=/path/to/kona-release-jdk
 
 ```bash
 KONA_HOME=/path/to/jdk ./run.sh -f 1 -wi 2 -i 3
+```
+
+聚焦基准可执行：
+
+```bash
+KONA_HOME=/path/to/jdk \
+JMH_INCLUDE=workshop.serialization.SerializationFocusedBenchmark \
+./run.sh -prof gc
 ```
 
 首次构建会从 Maven Central 下载 JMH 1.37 及其运行依赖，并按
