@@ -80,16 +80,6 @@ class ChecksumManifestTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             check_results.check_comparable_environments(environments)
 
-    def test_rejects_non_comparable_wide_final_environment(self):
-        baseline = check_results.RESULT_ROOT / "task-2.4-wide-baseline"
-        final = check_results.RESULT_ROOT / "task-2.4-wide-final"
-        environments = {
-            baseline: {"os": "test", "architecture": "arm64", "cpu": "cpu", "memory": "16 GB"},
-            final: {"os": "test", "architecture": "arm64", "cpu": "changed", "memory": "16 GB"},
-        }
-        with self.assertRaises(SystemExit):
-            check_results.check_comparable_environments(environments)
-
 
 if __name__ == "__main__":
     unittest.main()

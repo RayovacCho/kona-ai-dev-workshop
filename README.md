@@ -114,13 +114,9 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 `results/task-2.3-round1/` 至 `task-2.3-round3/`，仅用于审计 Codex 的改进依据，
 不作为当前正式性能结论。
 
-### 2.4 广泛场景复核
-
-根据导师评审补充中文小对象、中文对象图和 4096 元素中英文混合对象数组，将 JMH 扩展为
-18 项并进行同机 A/B 与反向复测。结论是目标写路径分配稳定下降，但尚未证明稳定的延迟加速。
-相关内容：[复核规划](docs/task-2.4-plan.md)、
-[复核报告](docs/reports/task-2.4-wide-serialization-validation.md)及
-[基线](results/task-2.4-wide-baseline/README.md) / [最终结果](results/task-2.4-wide-final/README.md)。
+根据导师评审，正式 JMH 已自然扩充为 18 项，覆盖中英文小对象、中英文对象图、4096 元素
+中英文混合对象数组和自定义序列化，并完成同机 A/B 与反向复测。结论是目标写路径分配
+稳定下降，但尚未证明稳定的延迟加速；数据与解释已并入 2.1 基线和 2.3 最终报告。
 
 ---
 
@@ -195,7 +191,6 @@ release 性能基准应使用“快速开始”中的统一 Make 命令，具体
 | 2.1 jtreg / JMH 基准 | 已完成（[报告](docs/reports/task-2.1-serialization-baseline.md) / [JMH](apps/serialization-jmh/README.md)） |
 | 2.2 Codex 方案与实现 | 已完成（[规划](docs/task-2.2-plan.md) / [报告](docs/reports/task-2.2-codex-serialization-optimization.md)） |
 | 2.3 JMH 对比与再优化 | 已完成（[规划](docs/task-2.3-plan.md) / [报告](docs/reports/task-2.3-serialization-followup.md) / [结果](results/task-2.3-final/README.md)） |
-| 2.4 中英文与大对象数组广泛场景复核 | 已完成（[规划](docs/task-2.4-plan.md) / [报告](docs/reports/task-2.4-wide-serialization-validation.md) / [结果](results/task-2.4-wide-final/README.md)） |
 
 完成一项后把上表改为「进行中」或「已完成」，并在 `docs/` 中补对应文档链接。
 

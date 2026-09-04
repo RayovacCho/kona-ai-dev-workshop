@@ -25,8 +25,6 @@ REQUIRED_RESULT_DIRS = {
     RESULT_ROOT / "task-2.3-round2",
     RESULT_ROOT / "task-2.3-round3",
     RESULT_ROOT / "task-2.3-final",
-    RESULT_ROOT / "task-2.4-wide-baseline",
-    RESULT_ROOT / "task-2.4-wide-final",
 }
 LEGACY_RESULT_DIRS = {
     RESULT_ROOT / "task-2.3-round1",
@@ -66,17 +64,14 @@ BENCHMARK_SOURCE = (
 DEPENDENCY_LOCK = ROOT / "apps" / "serialization-jmh" / "dependencies.sha256"
 BASELINE_REPORT = ROOT / "docs" / "reports" / "task-2.1-serialization-baseline.md"
 FINAL_REPORT = ROOT / "docs" / "reports" / "task-2.3-serialization-followup.md"
-WIDE_REPORT = ROOT / "docs" / "reports" / "task-2.4-wide-serialization-validation.md"
 COMPARABLE_ENV = ("os", "architecture", "cpu", "memory")
 HISTORICAL_BENCHMARK_SOURCE_SHA256 = (
     "c92bdf5086d89410e8856f494a60f412c5d399199207509cd5ed9196be104079"
 )
 HISTORICAL_BENCHMARK_RESULT_DIRS = {
-    RESULT_ROOT / "task-2.1-baseline",
     RESULT_ROOT / "task-2.3-round1",
     RESULT_ROOT / "task-2.3-round2",
     RESULT_ROOT / "task-2.3-round3",
-    RESULT_ROOT / "task-2.3-final",
 }
 
 
@@ -176,10 +171,7 @@ def check_environment(result_dir: Path) -> Dict[str, str]:
 
 
 def check_comparable_environments(environments: Mapping[Path, Dict[str, str]]) -> None:
-    pairs = (
-        (RESULT_ROOT / "task-2.1-baseline", RESULT_ROOT / "task-2.3-final"),
-        (RESULT_ROOT / "task-2.4-wide-baseline", RESULT_ROOT / "task-2.4-wide-final"),
-    )
+    pairs = ((RESULT_ROOT / "task-2.1-baseline", RESULT_ROOT / "task-2.3-final"),)
     for baseline_dir, final_dir in pairs:
         baseline = environments.get(baseline_dir)
         final = environments.get(final_dir)
@@ -278,8 +270,6 @@ if __name__ == "__main__":
     reports = {
         "task-2.1-baseline": BASELINE_REPORT,
         "task-2.3-final": FINAL_REPORT,
-        "task-2.4-wide-baseline": WIDE_REPORT,
-        "task-2.4-wide-final": WIDE_REPORT,
     }
     missing_result_dirs = REQUIRED_RESULT_DIRS - set(RESULT_DIRS)
     if missing_result_dirs:
