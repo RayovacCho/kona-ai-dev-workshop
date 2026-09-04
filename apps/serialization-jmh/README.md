@@ -6,9 +6,11 @@
 - `deserialize`：从预先生成的字节流读取对象；
 - `roundTrip`：完整序列化与反序列化。
 
-每条路径分别使用小对象（`SMALL`）、100 个元素的对象图（`GRAPH`）和自定义
-`writeObject/readObject` 对象（`CUSTOM`）。每次操作新建对象流，结果包含真实的流头、
-类描述符和句柄表成本，不会受到跨对象流缓存的影响。
+每条路径分别使用英文小对象（`SMALL`）、中文小对象（`SMALL_CHINESE`）、100 个元素的
+英文/中文对象图（`GRAPH` / `GRAPH_CHINESE`）、4096 元素的中英文混合对象数组
+（`LARGE_OBJECT_ARRAY`）和自定义 `writeObject/readObject` 对象（`CUSTOM`）。每次操作
+新建对象流，结果包含真实的流头、类描述符和句柄表成本，不会受到跨对象流缓存的影响。
+每类载荷在 JMH setup 阶段还会执行内容级往返校验，避免仅凭类型相同掩盖字段或数组回归。
 
 ## 运行
 

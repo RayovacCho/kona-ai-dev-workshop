@@ -25,6 +25,8 @@ REQUIRED_RESULT_DIRS = {
     RESULT_ROOT / "task-2.3-round2",
     RESULT_ROOT / "task-2.3-round3",
     RESULT_ROOT / "task-2.3-final",
+    RESULT_ROOT / "task-2.4-wide-baseline",
+    RESULT_ROOT / "task-2.4-wide-final",
 }
 LEGACY_RESULT_DIRS = {
     RESULT_ROOT / "task-2.3-round1",
@@ -64,7 +66,18 @@ BENCHMARK_SOURCE = (
 DEPENDENCY_LOCK = ROOT / "apps" / "serialization-jmh" / "dependencies.sha256"
 BASELINE_REPORT = ROOT / "docs" / "reports" / "task-2.1-serialization-baseline.md"
 FINAL_REPORT = ROOT / "docs" / "reports" / "task-2.3-serialization-followup.md"
+WIDE_REPORT = ROOT / "docs" / "reports" / "task-2.4-wide-serialization-validation.md"
 COMPARABLE_ENV = ("os", "architecture", "cpu", "memory")
+HISTORICAL_BENCHMARK_SOURCE_SHA256 = (
+    "c92bdf5086d89410e8856f494a60f412c5d399199207509cd5ed9196be104079"
+)
+HISTORICAL_BENCHMARK_RESULT_DIRS = {
+    RESULT_ROOT / "task-2.1-baseline",
+    RESULT_ROOT / "task-2.3-round1",
+    RESULT_ROOT / "task-2.3-round2",
+    RESULT_ROOT / "task-2.3-round3",
+    RESULT_ROOT / "task-2.3-final",
+}
 
 
 def sha256(path: Path) -> str:
@@ -132,7 +145,15 @@ def check_environment(result_dir: Path) -> Dict[str, str]:
         raise SystemExit(f"JMH 版本不符合预期：{values['jmh_version']}")
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", values["captured_at_utc"]):
         raise SystemExit("环境采集时间不是 UTC ISO-8601 格式")
-    if values["benchmark_source_sha256"] != sha256(BENCHMARK_SOURCE):
+    benchmark_hash = values["benchmark_source_sha256"]
+    if not re.fullmatch(r"[0-9a-f]{64}", benchmark_hash):
+        raise SystemExit("基准源码哈希格式无效")
+    expected_benchmark_hash = (
+        HISTORICAL_BENCHMARK_SOURCE_SHA256
+        if result_dir in HISTORICAL_BENCHMARK_RESULT_DIRS
+        else sha256(BENCHMARK_SOURCE)
+    )
+    if benchmark_hash != expected_benchmark_hash:
         raise SystemExit("基准源码与正式基准记录不一致")
     if values["dependency_lock_sha256"] != sha256(DEPENDENCY_LOCK):
         raise SystemExit("依赖锁定文件与正式基准记录不一致")
@@ -155,17 +176,25 @@ def check_environment(result_dir: Path) -> Dict[str, str]:
 
 
 def check_comparable_environments(environments: Mapping[Path, Dict[str, str]]) -> None:
-    baseline = environments.get(RESULT_ROOT / "task-2.1-baseline")
-    final = environments.get(RESULT_ROOT / "task-2.3-final")
-    if baseline is None or final is None:
-        return
-    differences = {
-        key: (baseline.get(key), final.get(key))
-        for key in COMPARABLE_ENV
-        if baseline.get(key) != final.get(key)
-    }
-    if differences:
-        raise SystemExit(f"基线与最终结果的测试环境不一致：{differences}")
+    pairs = (
+        (RESULT_ROOT / "task-2.1-baseline", RESULT_ROOT / "task-2.3-final"),
+        (RESULT_ROOT / "task-2.4-wide-baseline", RESULT_ROOT / "task-2.4-wide-final"),
+    )
+    for baseline_dir, final_dir in pairs:
+        baseline = environments.get(baseline_dir)
+        final = environments.get(final_dir)
+        if baseline is None or final is None:
+            continue
+        differences = {
+            key: (baseline.get(key), final.get(key))
+            for key in COMPARABLE_ENV
+            if baseline.get(key) != final.get(key)
+        }
+        if differences:
+            raise SystemExit(
+                f"基线与最终结果的测试环境不一致：{baseline_dir.name} / "
+                f"{final_dir.name}：{differences}"
+            )
 
 
 def check_required_provenance(result_dir: Path, environment: Dict[str, str]) -> None:
@@ -180,10 +209,13 @@ def check_jmh(
 ) -> None:
     with (result_dir / "jmh-result.json").open(encoding="utf-8") as stream:
         results = json.load(stream)
+    payloads = {"SMALL", "GRAPH", "CUSTOM"}
+    if environment["benchmark_source_sha256"] != HISTORICAL_BENCHMARK_SOURCE_SHA256:
+        payloads.update({"SMALL_CHINESE", "GRAPH_CHINESE", "LARGE_OBJECT_ARRAY"})
     expected = {
         (operation, payload)
         for operation in ("serialize", "deserialize", "roundTrip")
-        for payload in ("SMALL", "GRAPH", "CUSTOM")
+        for payload in payloads
     }
     actual = {
         (entry["benchmark"].rsplit(".", 1)[-1], entry["params"]["payloadType"])
@@ -246,6 +278,8 @@ if __name__ == "__main__":
     reports = {
         "task-2.1-baseline": BASELINE_REPORT,
         "task-2.3-final": FINAL_REPORT,
+        "task-2.4-wide-baseline": WIDE_REPORT,
+        "task-2.4-wide-final": WIDE_REPORT,
     }
     missing_result_dirs = REQUIRED_RESULT_DIRS - set(RESULT_DIRS)
     if missing_result_dirs:

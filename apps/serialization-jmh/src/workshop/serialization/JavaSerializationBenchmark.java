@@ -7,6 +7,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +34,14 @@ public class JavaSerializationBenchmark {
 
     @State(Scope.Thread)
     public static class BenchmarkState {
-        @Param({"SMALL", "GRAPH", "CUSTOM"})
+        @Param({
+                "SMALL",
+                "SMALL_CHINESE",
+                "GRAPH",
+                "GRAPH_CHINESE",
+                "LARGE_OBJECT_ARRAY",
+                "CUSTOM"
+        })
         public String payloadType;
 
         private Serializable payload;
@@ -43,7 +51,10 @@ public class JavaSerializationBenchmark {
         public void setup() throws IOException {
             payload = switch (payloadType) {
                 case "SMALL" -> new Person(42, "Ada", true, 98.5d);
+                case "SMALL_CHINESE" -> new Person(42, "艾达", true, 98.5d);
                 case "GRAPH" -> createGraph();
+                case "GRAPH_CHINESE" -> createChineseGraph();
+                case "LARGE_OBJECT_ARRAY" -> createLargeObjectArray();
                 case "CUSTOM" -> new CustomData(42, "Kona serialization benchmark");
                 default -> throw new IllegalArgumentException("Unknown payload type: " + payloadType);
             };
@@ -54,9 +65,7 @@ public class JavaSerializationBenchmark {
             } catch (ClassNotFoundException exception) {
                 throw new IOException("Benchmark payload cannot be deserialized", exception);
             }
-            if (restored.getClass() != payload.getClass()) {
-                throw new IllegalStateException("Round-trip type mismatch for " + payloadType);
-            }
+            verifyRoundTrip(payloadType, payload, restored);
         }
     }
 
@@ -93,11 +102,55 @@ public class JavaSerializationBenchmark {
     }
 
     private static Graph createGraph() {
+        return createGraph("team", "person-");
+    }
+
+    private static Graph createChineseGraph() {
+        return createGraph("团队", "成员-");
+    }
+
+    private static Graph createGraph(String graphName, String personNamePrefix) {
         List<Person> people = new ArrayList<>(100);
         for (int index = 0; index < 100; index++) {
-            people.add(new Person(index, "person-" + index, (index & 1) == 0, index * 1.25d));
+            people.add(new Person(
+                    index,
+                    personNamePrefix + index,
+                    (index & 1) == 0,
+                    index * 1.25d));
         }
-        return new Graph("team", people, new int[] {1, 2, 3, 5, 8, 13, 21});
+        return new Graph(graphName, people, new int[] {1, 2, 3, 5, 8, 13, 21});
+    }
+
+    private static Person[] createLargeObjectArray() {
+        Person[] people = new Person[4096];
+        for (int index = 0; index < people.length; index++) {
+            String name = (index & 1) == 0 ? "person-" + index : "成员-" + index;
+            people[index] = new Person(index, name, (index & 1) == 0, index * 1.25d);
+        }
+        return people;
+    }
+
+    private static void verifyRoundTrip(String payloadType, Object expected, Object actual) {
+        boolean matches = switch (payloadType) {
+            case "SMALL", "SMALL_CHINESE" -> expected.equals(actual);
+            case "GRAPH", "GRAPH_CHINESE" -> graphEquals((Graph) expected, (Graph) actual);
+            case "LARGE_OBJECT_ARRAY" -> Arrays.equals((Person[]) expected, (Person[]) actual);
+            case "CUSTOM" -> customDataEquals((CustomData) expected, (CustomData) actual);
+            default -> false;
+        };
+        if (!matches) {
+            throw new IllegalStateException("Round-trip content mismatch for " + payloadType);
+        }
+    }
+
+    private static boolean graphEquals(Graph expected, Graph actual) {
+        return expected.name().equals(actual.name())
+                && expected.people().equals(actual.people())
+                && Arrays.equals(expected.weights(), actual.weights());
+    }
+
+    private static boolean customDataEquals(CustomData expected, CustomData actual) {
+        return expected.number == actual.number && expected.text.equals(actual.text);
     }
 
     private record Person(int id, String name, boolean active, double score)

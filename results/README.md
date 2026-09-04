@@ -8,9 +8,13 @@
 |---|---|---|
 | [任务 2.1 基线](task-2.1-baseline/README.md) | `3dfb92059520` | schema 2，release `images/jdk` |
 | [任务 2.3 最终](task-2.3-final/README.md) | `0c13d1af75d6` | schema 2，release `images/jdk` |
+| [任务 2.4 广泛场景基线](task-2.4-wide-baseline/README.md) | `3dfb92059520` | schema 2，18 项扩展 JMH |
+| [任务 2.4 广泛场景最终](task-2.4-wide-final/README.md) | `0c13d1af75d6` | schema 2，18 项扩展 JMH |
 
-正式性能结论只使用这两组于 2026-09-03 在同一硬件、同一 macOS 版本下顺序重测的数据。
-完整对比和解释见[任务 2.3 报告](../docs/reports/task-2.3-serialization-followup.md)。
+原 9 项正式性能结论使用任务 2.1 与 2.3 两组于 2026-09-03 顺序重测的数据；中英文和
+大对象数组结论使用任务 2.4 两组于 2026-09-04 顺序重测的数据。两对实验各自在相同硬件、
+macOS 与 JMH 参数下完成。完整解释见[任务 2.3 报告](../docs/reports/task-2.3-serialization-followup.md)
+和[任务 2.4 报告](../docs/reports/task-2.4-wide-serialization-validation.md)。
 
 ## 历史候选
 
