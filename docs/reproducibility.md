@@ -64,8 +64,9 @@ make check-results
 对象的流，并要求两边输出字节完全一致。
 
 `RESULT_DIR=results/<新目录> make benchmark` 会依次构建镜像、跑 jtreg、执行带 GC
-profiler 的正式 JMH，并采集环境。目标默认拒绝覆盖已有结果；只有明确重建同一基准时才
-使用 `ALLOW_BASELINE_OVERWRITE=1`。
+profiler 的正式 JMH，并采集环境。目标拒绝覆盖已有结果；重复实验和重建实验都必须使用
+新的 `RESULT_DIR`，从而保留原始归档及其 schema。确认新结果后，再通过单独提交更新报告
+所引用的正式目录。
 
 `make check-results` 会递归发现 `results/` 下的基准结果和新增复现实验，要求校验和清单
 恰好包含 `jmh-result.json` 与 `environment.txt`，并验证 JMH 使用的 JVM 与环境清单一致。

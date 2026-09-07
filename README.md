@@ -13,7 +13,7 @@ JDK 源码改动在独立的 [Tencent Kona JDK 25 fork](https://github.com/Rayov
 
 | 你想看什么 | 去哪里 |
 |------------|--------|
-| 总规划与进度 | [docs/](docs/) |
+| 总规划、评审与进度 | [docs/](docs/) |
 | 崩溃分析、JMH 等报告 | [docs/reports/](docs/reports/) |
 | 触发 JVM 崩溃的小程序、JMH 程序 | [apps/](apps/) |
 | 当前正式结果与历史候选数据 | [results/](results/) |
@@ -37,6 +37,16 @@ make check
 默认使用 `python3`；如需指定解释器，执行
 `make check PYTHON=/path/to/python3`。
 
+查看已提交基线与优化结果中的中文/英文载荷对照：
+
+```bash
+make analyze-chinese
+```
+
+输出会分别比较中文小对象、中文对象图与对应英文载荷的耗时和分配量。该对照用于发现
+中文工作负载风险；由于两组样本的字符数和编码后字节数并不完全相同，不能把差异简单
+归因为“中文本身更快或更慢”。
+
 在新的结果目录中完整复跑 Kona release 构建、序列化 jtreg 和 JMH：
 
 ```bash
@@ -50,7 +60,7 @@ make configure-kona
 RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 ```
 
-正式结果默认不可覆盖；重复实验必须使用新的 `RESULT_DIR`。完整前置条件与命令说明见
+正式结果不可覆盖；重复实验必须使用新的 `RESULT_DIR`。完整前置条件与命令说明见
 [构建与基准复现约定](docs/reproducibility.md)。
 
 ---
@@ -77,9 +87,20 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 - 给出解决方案或建议  
 - 编写智能体技能与 MCP 服务器，使 AI 可重复执行上述流程
 
-相关内容：[任务报告](docs/reports/task-1.2-ai-crash-analysis.md)、
+相关内容：[任务规划](docs/task-1.2-plan.md)、
+[任务报告](docs/reports/task-1.2-ai-crash-analysis.md)、
 [崩溃分析 Skill](skills/hotspot-crash-analysis/SKILL.md)和
 [MCP 服务器](mcp/hotspot-crash-analyzer/README.md)。
+
+在 Codex 中使用仓库内 Skill 时，把它链接到个人 skills 目录，然后重新打开会话：
+
+```bash
+mkdir -p ~/.codex/skills
+ln -s /path/to/kona-ai-dev-workshop/skills/hotspot-crash-analysis \
+  ~/.codex/skills/hotspot-crash-analysis
+```
+
+若目标已经存在，先确认它是否指向本仓库；不要直接覆盖其他同名 Skill。
 
 ---
 
@@ -90,9 +111,12 @@ RESULT_DIR=results/reproductions/task-2.1-YYYYMMDD make benchmark
 - 构建 Kona JDK，运行相关 **jtreg** 测试，记录基准  
 - 编写 **JMH** 程序，测量当前序列化实现性能，记录基准数字  
 
-相关内容：[JMH 程序](apps/serialization-jmh/README.md)、
+相关内容：[任务规划](docs/task-2.1-plan.md)、[JMH 程序](apps/serialization-jmh/README.md)、
 [基准报告](docs/reports/task-2.1-serialization-baseline.md)和
 [机器可读结果](results/task-2.1-baseline/README.md)。
+
+中文载荷的基线/优化对照及后续建议见
+[中文序列化场景分析](docs/reports/chinese-scenario-analysis.md)。
 
 ### 2.2 使用 Codex 优化
 
@@ -191,8 +215,8 @@ release 性能基准应使用“快速开始”中的统一 Make 命令，具体
 | 项 | 状态 |
 |----|------|
 | 1.1 WhiteBox `controlledCrash` + 触发程序 + 崩溃测试 | 已完成（[规划](docs/task-1.1-plan.md) / [报告](docs/reports/task-1.1-controlled-crash.md)） |
-| 1.2 Error Log 分析 + JBS 关联 + Skill / MCP | 已完成（[报告](docs/reports/task-1.2-ai-crash-analysis.md) / [Skill](skills/hotspot-crash-analysis/SKILL.md) / [MCP](mcp/hotspot-crash-analyzer/README.md)） |
-| 2.1 jtreg / JMH 基准 | 已完成（[报告](docs/reports/task-2.1-serialization-baseline.md) / [JMH](apps/serialization-jmh/README.md)） |
+| 1.2 Error Log 分析 + JBS 关联 + Skill / MCP | 已完成（[规划](docs/task-1.2-plan.md) / [报告](docs/reports/task-1.2-ai-crash-analysis.md) / [Skill](skills/hotspot-crash-analysis/SKILL.md) / [MCP](mcp/hotspot-crash-analyzer/README.md)） |
+| 2.1 jtreg / JMH 基准 | 已完成（[规划](docs/task-2.1-plan.md) / [报告](docs/reports/task-2.1-serialization-baseline.md) / [JMH](apps/serialization-jmh/README.md)） |
 | 2.2 Codex 方案与实现 | 已完成（[规划](docs/task-2.2-plan.md) / [报告](docs/reports/task-2.2-codex-serialization-optimization.md)） |
 | 2.3 JMH 对比与再优化 | 已完成（[规划](docs/task-2.3-plan.md) / [报告](docs/reports/task-2.3-serialization-followup.md) / [结果](results/task-2.3-final/README.md)） |
 

@@ -385,4 +385,4 @@ if __name__ == "__main__":
         check_jmh(result_dir, environment, reports.get(result_dir.name))
     check_comparable_environments(environments)
     check_repeat_results()
-    print(f"基准产物：{len(RESULT_DIRS)} 组正式结果及 1 组反向复测检查通过")
+    print(f"基准产物：{len(RESULT_DIRS)} 组归档结果及 1 组反向复测检查通过")

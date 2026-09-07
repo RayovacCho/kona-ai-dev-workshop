@@ -23,6 +23,7 @@ mkdir -p "$LOG_DIR"
 exec "$JAVA_HOME/bin/java" \
   -XX:+UnlockDiagnosticVMOptions \
   -XX:+WhiteBoxAPI \
+  -XX:-CreateCoredumpOnCrash \
   -XX:ErrorFile="$LOG_DIR/hs_err_pid%p.log" \
   -Xbootclasspath/a:"$JAR" \
   workshop.crash.ControlledCrash "$1"

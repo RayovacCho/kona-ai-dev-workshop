@@ -6,11 +6,11 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.file.Path;
 
-/** Cross-JDK Java Object Serialization wire-format compatibility probe. */
+/** Java 对象序列化跨 JDK 流格式（wire format）兼容性检查。 */
 public class SerializationCompatibility {
     public static void main(String[] args) throws Exception {
         if (args.length != 2 || !(args[0].equals("write") || args[0].equals("read"))) {
-            throw new IllegalArgumentException("usage: write|read <stream-file>");
+            throw new IllegalArgumentException("用法：write|read <序列化文件>");
         }
         Path stream = Path.of(args[1]);
         if (args[0].equals("write")) {
@@ -37,20 +37,20 @@ public class SerializationCompatibility {
                 new FileInputStream(stream.toFile()))) {
             SharedGraph graph = (SharedGraph) input.readObject();
             if (graph.self != graph) {
-                throw new RuntimeException("cyclic reference was not preserved");
+                throw new RuntimeException("循环引用未被保留");
             }
             if (graph.people.length != 2 || graph.people[0] != graph.people[1]) {
-                throw new RuntimeException("shared reference identity was not preserved");
+                throw new RuntimeException("共享引用的对象标识未被保留");
             }
             if (!"共享对象-Shared".equals(graph.people[0].name)) {
-                throw new RuntimeException("multilingual field value was corrupted");
+                throw new RuntimeException("中英文混合字段内容损坏");
             }
             Person unshared = (Person) input.readUnshared();
             if (unshared.id != 7 || !"非共享-Unshared".equals(unshared.name)) {
-                throw new RuntimeException("unshared value was corrupted");
+                throw new RuntimeException("非共享对象内容损坏");
             }
             if (input.read() != -1) {
-                throw new RuntimeException("unexpected trailing stream data");
+                throw new RuntimeException("序列化流包含非预期的尾部数据");
             }
         }
     }

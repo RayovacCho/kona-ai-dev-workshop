@@ -43,3 +43,5 @@ cd "$WORKSHOP_ROOT/apps/controlled-crash"
 `jdk.test.whitebox.WhiteBox` 注册；普通类路径（classpath）会被 VM 拒绝。
 构建脚本直接调用 `$JAVA_HOME/bin/javac` 和 `$JAVA_HOME/bin/jar`，运行脚本会拒绝
 非 fastdebug/slowdebug JVM，避免意外混用系统 JDK 或性能测试使用的 release JDK。
+运行命令还会显式设置 `-XX:-CreateCoredumpOnCrash`；本任务只需要 `hs_err`，不应在批量
+测试时生成体积巨大的 core dump。

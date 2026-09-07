@@ -139,5 +139,5 @@ KONA_HOME=<baseline-or-optimized-release-jdk> \
 CPU 代价和异常安全。
 
 短时 JSON 保存在本地忽略目录 `apps/serialization-jmh/results/`，不作为正式结果提交。
-2.3 应按 2.1 的完整 9 场景参数生成新的可审计 JSON、环境文件和校验和，并至少重复一轮
+2.3 应按 2.1 的完整 18 项矩阵参数生成新的可审计 JSON、环境文件和校验和，并至少重复一轮
 确认耗时变化。

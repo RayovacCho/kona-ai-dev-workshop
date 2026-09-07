@@ -1,5 +1,6 @@
 import io
 import json
+import socket
 import subprocess
 import sys
 import unittest
@@ -28,6 +29,8 @@ class AnalyzerTest(unittest.TestCase):
     def test_controlled_assertion(self):
         result = parse_log_file(str(FIXTURES / "hs_err_controlled_assert.log"))
         self.assertEqual("assertion", result["error"]["kind"])
+        self.assertEqual("断言失败", result["error"]["kind_label"])
+        self.assertEqual("高", result["direct_cause"]["confidence_label"])
         self.assertIn("test assert", result["error"]["message"])
         self.assertTrue(result["controlled_crash"])
         self.assertTrue(result["direct_cause"]["intentional"])
@@ -136,6 +139,28 @@ END.
         self.assertTrue(result["jbs"]["searched"])
         self.assertEqual("JDK-1234567", result["jbs"]["issues"][0]["key"])
         search.assert_called_once()
+
+    @mock.patch("analyzer.urllib.request.urlopen", side_effect=socket.timeout("read timed out"))
+    def test_jbs_timeout_preserves_local_analysis(self, _urlopen):
+        result = analyze_file(str(FIXTURES / "hs_err_native_crash.log"))
+        self.assertEqual("SIGSEGV", result["error"]["signal"])
+        self.assertFalse(result["jbs"]["searched"])
+        self.assertIn("JBS 查询失败", result["jbs"]["error"])
+        self.assertIsNotNone(result["jbs"]["browse_url"])
+
+    def test_redacts_sensitive_command_line_and_host(self):
+        text = """# A fatal error has been detected by the Java Runtime Environment:
+# Internal Error (/Users/alice/jdk/vmError.cpp:42), pid=1, tid=2
+# fatal error: synthetic failure
+Command Line: -DapiToken=secret /Users/alice/app.jar
+Host: alice.internal, arm64, 16G
+END.
+"""
+        result = parse_log_text(text)
+        self.assertEqual("-DapiToken=<已隐藏> /Users/<用户>/app.jar", result["command_line"])
+        self.assertEqual("<主机名已隐藏>, arm64, 16G", result["host"])
+        self.assertEqual("/Users/<用户>/jdk/vmError.cpp", result["error"]["source_file"])
+        self.assertTrue(result["privacy_redacted"])
 
     def test_jql_escapes_input(self):
         jql = build_jql('foo "bar" \\ baz')

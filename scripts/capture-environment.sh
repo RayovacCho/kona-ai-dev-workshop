@@ -27,7 +27,7 @@ if [[ -n "$(git -C "$KONA_SRC" status --porcelain)" ]]; then
   echo "拒绝记录含未提交修改的 Kona 工作树" >&2
   exit 2
 fi
-if [[ -n "$(git -C "$workshop_root" status --porcelain --untracked-files=no)" ]]; then
+if [[ -n "$(git -C "$workshop_root" status --porcelain)" ]]; then
   echo "拒绝记录含未提交修改的 workshop 工作树" >&2
   exit 2
 fi

@@ -9,7 +9,7 @@ BASELINE_DIR := $(abspath $(RESULT_DIR))
 
 .NOTPARALLEL: benchmark
 
-.PHONY: check test-mcp test-results-validator check-results check-crash-logs jmh-build jmh-smoke jmh-focused-smoke wire-compatibility verify-clean-kona \
+.PHONY: check test-mcp test-results-validator check-results check-crash-logs analyze-chinese jmh-build jmh-smoke jmh-focused-smoke wire-compatibility verify-clean-kona \
         verify-kona-home configure-kona \
         jdk-images jtreg-baseline jmh-baseline capture-environment \
         baseline-checksums benchmark
@@ -32,6 +32,9 @@ check-results:
 
 check-crash-logs:
 	@$(PYTHON) scripts/check-crash-logs.py
+
+analyze-chinese:
+	@$(PYTHON) scripts/analyze-chinese-jmh.py
 
 jmh-build:
 	@test -n "$(KONA_HOME)" || { echo "请设置 KONA_HOME" >&2; exit 2; }
@@ -97,20 +100,18 @@ jtreg-baseline: verify-clean-kona
 	  TEST="$(JTREG_TESTS)" JTREG='JOBS=4;TIMEOUT_FACTOR=4'
 
 jmh-baseline: verify-kona-home jmh-build
-	@test ! -e "$(BASELINE_DIR)/jmh-result.json" || \
-	  test "$(ALLOW_BASELINE_OVERWRITE)" = 1 || { \
+	@test ! -e "$(BASELINE_DIR)/jmh-result.json" || { \
 	  echo "正式结果已存在：$(BASELINE_DIR)/jmh-result.json" >&2; \
-	  echo "请设置新的 RESULT_DIR；确需覆盖时显式传 ALLOW_BASELINE_OVERWRITE=1" >&2; exit 2; }
+	  echo "正式归档不可覆盖，请设置新的 RESULT_DIR" >&2; exit 2; }
 	@mkdir -p "$(BASELINE_DIR)"
 	@KONA_HOME="$(KONA_HOME)" \
 	  JMH_RESULT_FILE="$(BASELINE_DIR)/jmh-result.json" \
 	  apps/serialization-jmh/run.sh -prof gc
 
 capture-environment: verify-kona-home
-	@test ! -e "$(BASELINE_DIR)/environment.txt" || \
-	  test "$(ALLOW_BASELINE_OVERWRITE)" = 1 || { \
+	@test ! -e "$(BASELINE_DIR)/environment.txt" || { \
 	  echo "正式环境清单已存在：$(BASELINE_DIR)/environment.txt" >&2; \
-	  echo "请设置新的 RESULT_DIR；确需覆盖时显式传 ALLOW_BASELINE_OVERWRITE=1" >&2; exit 2; }
+	  echo "正式归档不可覆盖，请设置新的 RESULT_DIR" >&2; exit 2; }
 	@mkdir -p "$(BASELINE_DIR)"
 	@KONA_SRC="$(KONA_SRC)" KONA_HOME="$(KONA_HOME)" KONA_CONF="$(KONA_CONF)" \
 	  scripts/capture-environment.sh "$(BASELINE_DIR)/environment.txt"

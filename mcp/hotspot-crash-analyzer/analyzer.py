@@ -3,6 +3,7 @@
 
 import json
 import re
+import socket
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -11,10 +12,42 @@ from typing import Any, Dict, List, Optional
 
 MAX_LOG_BYTES = 10 * 1024 * 1024
 JBS_BASE = "https://bugs.openjdk.org"
+ERROR_KIND_LABELS = {
+    "signal": "原生信号",
+    "internal_error": "HotSpot 内部错误",
+    "assertion": "断言失败",
+    "guarantee": "保证条件失败",
+    "fatal": "致命错误",
+    "out_of_memory": "内存不足",
+    "unknown": "未知致命错误",
+}
+CONFIDENCE_LABELS = {"high": "高", "medium": "中", "low": "低"}
+SENSITIVE_ARGUMENT = re.compile(
+    r"(?i)(?P<name>(?:-D|--)?[^\s=]*(?:password|passwd|secret|token|"
+    r"credential|cookie|authorization|api[_-]?key)[^\s=]*=)"
+    r"(?P<value>\"[^\"]*\"|'[^']*'|[^\s]+)"
+)
+HOME_PATH = re.compile(r"(?P<prefix>/(?:Users|home)/)[^/\s]+")
+WINDOWS_HOME_PATH = re.compile(r"(?i)(?P<prefix>[A-Z]:\\Users\\)[^\\\s]+")
 
 
 class AnalysisError(ValueError):
     pass
+
+
+def _redact_sensitive_text(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    value = SENSITIVE_ARGUMENT.sub(r"\g<name><已隐藏>", value)
+    value = HOME_PATH.sub(r"\g<prefix><用户>", value)
+    return WINDOWS_HOME_PATH.sub(r"\g<prefix><用户>", value)
+
+
+def _redact_host(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    _, separator, details = value.partition(",")
+    return f"<主机名已隐藏>{separator}{details}" if separator else "<主机名已隐藏>"
 
 
 def _first(pattern: str, text: str, flags: int = re.MULTILINE) -> Optional[str]:
@@ -147,11 +180,12 @@ def _direct_cause(
         summary = (
             f"有意触发的 WhiteBox 受控崩溃引发了 {error['signal']}"
             if error["kind"] == "signal"
-            else f"有意触发的 WhiteBox 受控崩溃触发了 HotSpot {error['kind']} 错误"
+            else f"有意触发的 WhiteBox 受控崩溃触发了{error['kind_label']}"
         )
         return {
             "summary": summary,
             "confidence": "high",
+            "confidence_label": CONFIDENCE_LABELS["high"],
             "intentional": True,
             "evidence": evidence,
             "advice": [
@@ -168,9 +202,11 @@ def _direct_cause(
         summary = error["message"]
     else:
         summary = "HotSpot 致命错误；解析出的错误头中没有直接触发原因"
+    confidence = "medium" if error["kind"] == "unknown" else "high"
     return {
         "summary": summary,
-        "confidence": "medium" if error["kind"] == "unknown" else "high",
+        "confidence": confidence,
+        "confidence_label": CONFIDENCE_LABELS[confidence],
         "intentional": False,
         "evidence": evidence,
         "advice": _advice(error, frame),
@@ -208,6 +244,7 @@ def parse_log_text(text: str, source: str = "<content>") -> Dict[str, Any]:
     if size > MAX_LOG_BYTES:
         raise AnalysisError(f"日志大小为 {size} 字节；最大允许 {MAX_LOG_BYTES} 字节")
     error = _error_details(text)
+    error["kind_label"] = ERROR_KIND_LABELS[error["kind"]]
     frame = _problematic_frame(text)
     controlled = (
         "VMError::controlled_crash" in text
@@ -215,17 +252,19 @@ def parse_log_text(text: str, source: str = "<content>") -> Dict[str, Any]:
         or ("-XX:+WhiteBoxAPI" in text and "workshop.crash.ControlledCrash" in text)
     )
     terms = _search_terms(error, frame, controlled)
+    if error.get("source_file"):
+        error["source_file"] = _redact_sensitive_text(error["source_file"])
     return {
         "schema_version": 1,
-        "source": source,
+        "source": _redact_sensitive_text(source),
         "log_complete": text.rstrip().endswith("END."),
         "error": error,
         "direct_cause": _direct_cause(error, frame, controlled),
         "problematic_frame": frame,
         "jre_version": _first(r"^# JRE version:\s*(.+)$", text),
         "vm_version": _first(r"^# Java VM:\s*(.+)$", text),
-        "command_line": _first(r"^Command Line:\s*(.+)$", text),
-        "host": _first(r"^Host:\s*(.+)$", text),
+        "command_line": _redact_sensitive_text(_first(r"^Command Line:\s*(.+)$", text)),
+        "host": _redact_host(_first(r"^Host:\s*(.+)$", text)),
         "time": _first(r"^Time:\s*(.+)$", text),
         "current_thread": _first(r"^Current thread \([^)]*\):\s*(.+)$", text),
         "vm_state": _first(r"^VM state:\s*(.+)$", text),
@@ -234,6 +273,7 @@ def parse_log_text(text: str, source: str = "<content>") -> Dict[str, Any]:
         "controlled_crash": controlled,
         "jbs_search_terms": terms,
         "jbs_search_url": build_jbs_browse_url(terms[0]) if terms else None,
+        "privacy_redacted": True,
     }
 
 
@@ -279,7 +319,7 @@ def search_jbs(query: str, max_results: int = 5, timeout_seconds: float = 12.0) 
     try:
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
             payload = json.load(response)
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+    except (urllib.error.URLError, socket.timeout, TimeoutError, json.JSONDecodeError) as exc:
         raise AnalysisError(f"JBS 查询失败：{exc}") from exc
 
     issues = []
@@ -319,7 +359,7 @@ def get_jbs_issue(key: str, timeout_seconds: float = 12.0) -> Dict[str, Any]:
     try:
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
             item = json.load(response)
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+    except (urllib.error.URLError, socket.timeout, TimeoutError, json.JSONDecodeError) as exc:
         raise AnalysisError(f"JBS 问题查询失败：{exc}") from exc
     fields = item.get("fields", {})
     links = []

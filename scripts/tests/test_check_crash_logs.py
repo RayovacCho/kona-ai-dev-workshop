@@ -57,6 +57,17 @@ class CrashLogManifestTest(unittest.TestCase):
             check_crash_logs.check_environment_privacy(text, self.log)
         self.assertNotIn("do-not-print", str(raised.exception))
 
+    def test_rejects_sensitive_command_argument_without_exposing_value(self):
+        text = """Command Line: -DapiToken=do-not-print
+Environment Variables:
+LANG=C.UTF-8
+
+System:
+"""
+        with self.assertRaisesRegex(SystemExit, "apiToken") as raised:
+            check_crash_logs.check_environment_privacy(text, self.log)
+        self.assertNotIn("do-not-print", str(raised.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

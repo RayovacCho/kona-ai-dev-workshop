@@ -56,3 +56,15 @@ JMH_INCLUDE=workshop.serialization.SerializationFocusedBenchmark \
 [基准报告](../../docs/reports/task-2.1-serialization-baseline.md)，任务 2.3 的多轮对比、
 Codex 分析与最终结果见[进一步优化报告](../../docs/reports/task-2.3-serialization-followup.md)
 和[`results/task-2.3-final/`](../../results/task-2.3-final/README.md)。
+
+## 中文场景分析
+
+仓库根目录提供确定性的中文对照分析，不需要重新运行 JMH：
+
+```bash
+make analyze-chinese
+```
+
+它从已提交的基线和优化后 JSON 中配对比较 `SMALL` / `SMALL_CHINESE` 与
+`GRAPH` / `GRAPH_CHINESE`，输出中文 Markdown 表格。结果中的差异同时包含文本长度和编码后
+字节数影响，适合检查中文场景是否回退，不应被解释为单纯的语言因果效应。

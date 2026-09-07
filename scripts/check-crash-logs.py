@@ -29,6 +29,10 @@ SENSITIVE_ENV_NAME = re.compile(
     r"(?:TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|COOKIE|AUTHORIZATION|API_KEY|PRIVATE_KEY)",
     re.IGNORECASE,
 )
+SENSITIVE_COMMAND_ARGUMENT = re.compile(
+    r"(?i)(?:-D|--)?([^\s=]*(?:TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|"
+    r"COOKIE|AUTHORIZATION|API[_-]?KEY|PRIVATE[_-]?KEY)[^\s=]*)="
+)
 
 
 def sha256(path: Path) -> str:
@@ -115,6 +119,15 @@ def check_log(path: Path, expected: Mapping[str, object]) -> None:
 
 
 def check_environment_privacy(text: str, path: Path) -> None:
+    for prefix in ("Command Line:", "jvm_args:"):
+        for line in text.splitlines():
+            if not line.startswith(prefix):
+                continue
+            match = SENSITIVE_COMMAND_ARGUMENT.search(line)
+            if match:
+                raise SystemExit(
+                    f"崩溃日志命令行包含疑似敏感参数 {match.group(1)}：{path}"
+                )
     section = text.split("Environment Variables:", 1)[1]
     for line in section.splitlines():
         value = line.strip()
