@@ -112,6 +112,10 @@ jtreg:test/jdk/java/io/ObjectStreamClass                        6     6     0   
 TEST SUCCESS
 ```
 
+这里的 **161** 并非相对规划预期的 163 项发生测试丢失：本阶段完整命令没有包含
+`test/jdk/java/io/Externalizable` 目录，因此少计该目录的 2 项。任务 2.3 已把该目录补回，
+并在最终实现上完成 **163/163**；两次记录的差异来自测试范围，不是通过率回退。
+
 本机新版 Xcode 首次配置时没有正确检测到 `metal`，但 `xcrun -sdk macosx metal --version`
 实际可用；在完整 Xcode 工具上下文中重新配置后成功。构建中的 HotSpot `memset` 警告来自
 上游源码，与序列化修改无关，配置按 2.1 约定使用 `--disable-warnings-as-errors`。

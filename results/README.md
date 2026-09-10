@@ -9,6 +9,7 @@
 | [任务 2.1 基线](task-2.1-baseline/README.md) | `3dfb92059520` | schema 2，release `images/jdk` |
 | [任务 2.3 最终](task-2.3-final/README.md) | `0c13d1af75d6` | schema 2，release `images/jdk` |
 | [GRAPH 反向复测](task-2.3-repeat/README.md) | 基线与最终提交 | 原始 JMH JSON + SHA-256 |
+| [focused A/B/B/A](task-2.3-focused-abba/README.md) | 基线与最终提交 | 4 段交错 JMH + 双 JDK 哈希 |
 
 正式性能结论使用任务 2.1 与 2.3 两组于 2026-09-04 顺序重测的数据，均包含 18 项中英文、
 对象图、大对象数组和自定义序列化场景，并在相同硬件、macOS 与 JMH 参数下完成。
@@ -29,3 +30,7 @@
 目录外，`make check-results` 会要求所有新结果使用 schema 3，并校验 workshop/Kona 提交、
 JDK `SOURCE`、`release`、`bin/java`、`lib/modules`、JMH 源码、执行脚本、实际基准 JAR
 和依赖锁定信息。当前两组正式归档结果保留生成时使用的 schema 2。
+
+`task-2.3-focused-abba/` 是双 JDK 的独立交错实验，使用专用 `experiment_schema=1`；
+`make check-results` 会检查其 A/B/B/A 顺序、四份 JSON、长测量参数和两套 JDK 来源，
+不会把它误套到单 JDK、单 `jmh-result.json` 的通用 schema 3。

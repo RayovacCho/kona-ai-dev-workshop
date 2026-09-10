@@ -42,6 +42,17 @@ JMH_INCLUDE=workshop.serialization.SerializationFocusedBenchmark \
 ./run.sh -prof gc
 ```
 
+评审后的正式 focused 复测采用 A/B/B/A 交错顺序，并把测量时间延长到 3 秒：
+
+```bash
+JMH_INCLUDE=workshop.serialization.SerializationFocusedBenchmark \
+JMH_RESULT_FILE=/new/result/file.json \
+KONA_HOME=/path/to/jdk ./run.sh -prof gc -f 3 -wi 5 -i 5 -w 1s -r 3s
+```
+
+四段运行必须分别写入新文件且依次切换基线、优化、优化、基线 JDK；已完成的原始结果见
+[`results/task-2.3-focused-abba/`](../../results/task-2.3-focused-abba/README.md)。
+
 首次构建会从 Maven Central 下载 JMH 1.37 及其运行依赖，并按
 `dependencies.sha256` 校验。默认配置为 3 个 fork、
 5 次预热和 5 次测量，每次 1 秒；结果以 `us/op` 输出，并保存到 `results/` 下的 JSON

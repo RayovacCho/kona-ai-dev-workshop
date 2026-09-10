@@ -139,11 +139,14 @@ ln -s /path/to/kona-ai-dev-workshop/skills/hotspot-crash-analysis \
 [最终机器可读结果](results/task-2.3-final/README.md)。中间候选数据保存在
 `results/task-2.3-round1/` 至 `task-2.3-round3/`，仅用于审计 Codex 的改进依据，
 不作为当前正式性能结论；反向顺序聚焦复测原始数据保存在
-[`results/task-2.3-repeat`](results/task-2.3-repeat/README.md)。
+[`results/task-2.3-repeat`](results/task-2.3-repeat/README.md)，评审后的预分配缓冲/复用流
+A/B/B/A 长测量结果保存在
+[`results/task-2.3-focused-abba`](results/task-2.3-focused-abba/README.md)。
 
 根据导师评审，正式 JMH 已自然扩充为 18 项，覆盖中英文小对象、中英文对象图、4096 元素
 中英文混合对象数组和自定义序列化，并完成同机 A/B 与反向复测。结论是目标写路径分配
-稳定下降，但尚未证明稳定的延迟加速；数据与解释已并入 2.1 基线和 2.3 最终报告。
+稳定下降，但不是无条件延迟改进：focused 复测在英文单引用字段扁平图中测得小幅延迟代价，
+中文图和大数组的延迟仍不确定。数据、适用边界与解释已并入 2.3 最终报告。
 
 ---
 

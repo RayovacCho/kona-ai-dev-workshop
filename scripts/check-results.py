@@ -9,6 +9,7 @@ from typing import Any, Dict, Mapping, Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 RESULT_ROOT = ROOT / "results"
+FOCUSED_ABBA_DIR = RESULT_ROOT / "task-2.3-focused-abba"
 EXPECTED_CHECKSUM_FILES = {"jmh-result.json", "environment.txt"}
 RESULT_DIRS = tuple(
     sorted(
@@ -16,11 +17,19 @@ RESULT_DIRS = tuple(
             path.parent
             for name in EXPECTED_CHECKSUM_FILES
             for path in RESULT_ROOT.rglob(name)
+            if path.parent != FOCUSED_ABBA_DIR
         }
     )
 )
 REPEAT_DIR = RESULT_ROOT / "task-2.3-repeat"
 REPEAT_CHECKSUM_FILES = {"baseline.json", "optimized.json"}
+FOCUSED_ABBA_JSON_FILES = (
+    "a1-baseline.json",
+    "b1-optimized.json",
+    "b2-optimized.json",
+    "a2-baseline.json",
+)
+FOCUSED_ABBA_CHECKSUM_FILES = set(FOCUSED_ABBA_JSON_FILES) | {"environment.txt"}
 REQUIRED_RESULT_DIRS = {
     RESULT_ROOT / "task-2.1-baseline",
     RESULT_ROOT / "task-2.3-round1",
@@ -72,7 +81,18 @@ BENCHMARK_SOURCE = (
     / "serialization"
     / "JavaSerializationBenchmark.java"
 )
+FOCUSED_BENCHMARK_SOURCE = (
+    ROOT
+    / "apps"
+    / "serialization-jmh"
+    / "src"
+    / "workshop"
+    / "serialization"
+    / "SerializationFocusedBenchmark.java"
+)
 DEPENDENCY_LOCK = ROOT / "apps" / "serialization-jmh" / "dependencies.sha256"
+BENCHMARK_BUILD = ROOT / "apps" / "serialization-jmh" / "build.sh"
+BENCHMARK_RUN = ROOT / "apps" / "serialization-jmh" / "run.sh"
 BASELINE_REPORT = ROOT / "docs" / "reports" / "task-2.1-serialization-baseline.md"
 FINAL_REPORT = ROOT / "docs" / "reports" / "task-2.3-serialization-followup.md"
 COMPARABLE_ENV = ("os", "architecture", "cpu", "memory")
@@ -368,6 +388,144 @@ def check_repeat_results() -> None:
             raise SystemExit(f"最终报告缺少反向复测结果：{value}")
 
 
+def check_focused_abba_results() -> None:
+    check_checksums(FOCUSED_ABBA_DIR, FOCUSED_ABBA_CHECKSUM_FILES)
+    environment = read_environment(FOCUSED_ABBA_DIR / "environment.txt")
+    expected_environment = {
+        "experiment_schema": "1",
+        "run_order": "A1-baseline,B1-optimized,B2-optimized,A2-baseline",
+        "jmh_version": "1.37",
+        "jmh_forks": "3",
+        "jmh_warmup": "5x1s",
+        "jmh_measurement": "5x3s",
+        "jmh_threads": "1",
+        "workshop_worktree": "clean_at_run_start",
+        "focused_benchmark_source_sha256": sha256(FOCUSED_BENCHMARK_SOURCE),
+        "dependency_lock_sha256": sha256(DEPENDENCY_LOCK),
+        "benchmark_build_sha256": sha256(BENCHMARK_BUILD),
+        "benchmark_run_sha256": sha256(BENCHMARK_RUN),
+    }
+    for key, expected in expected_environment.items():
+        if environment.get(key) != expected:
+            raise SystemExit(f"focused A/B/B/A 环境字段不符合预期 {key}")
+    for key in ("benchmark_jar_sha256",):
+        if not re.fullmatch(r"[0-9a-f]{64}", environment.get(key, "")):
+            raise SystemExit(f"focused A/B/B/A 哈希字段无效：{key}")
+    if not re.fullmatch(r"[0-9a-f]{40}", environment.get("workshop_commit", "")):
+        raise SystemExit("focused A/B/B/A workshop commit 无效")
+    for key in ("captured_at_utc_start", "captured_at_utc_end"):
+        if not re.fullmatch(
+            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", environment.get(key, "")
+        ):
+            raise SystemExit(f"focused A/B/B/A 时间字段无效：{key}")
+
+    formal_environments = {
+        "baseline": read_environment(
+            RESULT_ROOT / "task-2.1-baseline" / "environment.txt"
+        ),
+        "optimized": read_environment(
+            RESULT_ROOT / "task-2.3-final" / "environment.txt"
+        ),
+    }
+    for variant, formal in formal_environments.items():
+        comparisons = {
+            f"{variant}_kona_commit": "kona_commit",
+            f"{variant}_kona_home": "kona_home",
+            f"{variant}_jdk_release_sha256": "jdk_release_sha256",
+            f"{variant}_java_executable_sha256": "java_executable_sha256",
+            f"{variant}_modules_sha256": "modules_sha256",
+        }
+        for focused_key, formal_key in comparisons.items():
+            if environment.get(focused_key) != formal.get(formal_key):
+                raise SystemExit(
+                    f"focused {variant} JDK 与正式归档不一致：{focused_key}"
+                )
+
+    expected_matrix = {
+        (operation, payload)
+        for operation in ("serializePreSized", "serializeSteadyState")
+        for payload in ("GRAPH", "GRAPH_CHINESE", "LARGE_OBJECT_ARRAY")
+    }
+    expected_variants = {
+        "a1-baseline.json": "baseline",
+        "b1-optimized.json": "optimized",
+        "b2-optimized.json": "optimized",
+        "a2-baseline.json": "baseline",
+    }
+    scores: Dict[str, Dict[tuple, tuple]] = {}
+    for name in FOCUSED_ABBA_JSON_FILES:
+        results = json.loads((FOCUSED_ABBA_DIR / name).read_text(encoding="utf-8"))
+        actual_matrix = {
+            (entry["benchmark"].rsplit(".", 1)[-1], entry["params"]["payloadType"])
+            for entry in results
+        }
+        if len(results) != 6 or actual_matrix != expected_matrix:
+            raise SystemExit(f"focused A/B/B/A 场景矩阵不符合预期：{name}")
+        variant = expected_variants[name]
+        expected_jvm = environment[f"{variant}_kona_home"] + "/bin/java"
+        scores[name] = {}
+        for entry in results:
+            if entry.get("jvm") != expected_jvm:
+                raise SystemExit(f"focused A/B/B/A JVM 不符合预期：{name}")
+            for key, expected in {
+                "mode": "avgt", "threads": 1, "forks": 3,
+                "warmupIterations": 5, "warmupTime": "1 s", "warmupBatchSize": 1,
+                "measurementIterations": 5, "measurementTime": "3 s",
+                "measurementBatchSize": 1,
+            }.items():
+                if entry.get(key) != expected:
+                    raise SystemExit(f"focused A/B/B/A 配置不符合预期 {key}：{name}")
+            primary = entry["primaryMetric"]
+            if primary.get("scoreUnit") != "us/op":
+                raise SystemExit(f"focused A/B/B/A 分数单位无效：{name}")
+            check_raw_data(primary, entry["benchmark"])
+            allocation = entry.get("secondaryMetrics", {}).get("gc.alloc.rate.norm", {})
+            if allocation.get("scoreUnit") != "B/op":
+                raise SystemExit(f"focused A/B/B/A 缺少分配指标：{name}")
+            check_raw_data(allocation, entry["benchmark"] + " gc.alloc.rate.norm")
+            for metric in (primary, allocation):
+                value = metric.get("score")
+                if not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+                    raise SystemExit(f"focused A/B/B/A 指标无效：{name}")
+            matrix_key = (
+                entry["benchmark"].rsplit(".", 1)[-1],
+                entry["params"]["payloadType"],
+            )
+            scores[name][matrix_key] = (primary["score"], allocation["score"])
+
+    report = (FOCUSED_ABBA_DIR / "README.md").read_text(encoding="utf-8")
+    for operation, payload in sorted(expected_matrix):
+        a_names = ("a1-baseline.json", "a2-baseline.json")
+        b_names = ("b1-optimized.json", "b2-optimized.json")
+        a_score = sum(scores[name][(operation, payload)][0] for name in a_names) / 2
+        b_score = sum(scores[name][(operation, payload)][0] for name in b_names) / 2
+        a_alloc = sum(scores[name][(operation, payload)][1] for name in a_names) / 2
+        b_alloc = sum(scores[name][(operation, payload)][1] for name in b_names) / 2
+        expected_values = (
+            f"{a_score:.3f}", f"{b_score:.3f}",
+            f"{a_alloc:,.0f}", f"{b_alloc:,.0f}",
+        )
+        rows = [
+            line for line in report.splitlines()
+            if line.startswith(f"| `{operation}` | {payload} |")
+        ]
+        if len(rows) != 1 or any(value not in rows[0] for value in expected_values):
+            raise SystemExit(f"focused A/B/B/A 报告数字不一致：{operation}/{payload}")
+        for name in FOCUSED_ABBA_JSON_FILES:
+            score = scores[name][(operation, payload)][0]
+            results = json.loads((FOCUSED_ABBA_DIR / name).read_text(encoding="utf-8"))
+            entry = next(
+                item for item in results
+                if item["benchmark"].endswith("." + operation)
+                and item["params"]["payloadType"] == payload
+            )
+            displayed = f"{score:.3f} ± {entry['primaryMetric']['scoreError']:.3f}"
+            if displayed not in report:
+                raise SystemExit(
+                    f"focused A/B/B/A 报告缺少逐轮结果：{name}/{operation}/{payload}"
+                )
+
+
 if __name__ == "__main__":
     reports = {
         "task-2.1-baseline": BASELINE_REPORT,
@@ -385,4 +543,8 @@ if __name__ == "__main__":
         check_jmh(result_dir, environment, reports.get(result_dir.name))
     check_comparable_environments(environments)
     check_repeat_results()
-    print(f"基准产物：{len(RESULT_DIRS)} 组归档结果及 1 组反向复测检查通过")
+    check_focused_abba_results()
+    print(
+        f"基准产物：{len(RESULT_DIRS)} 组归档结果、1 组反向复测及 "
+        "1 组 focused A/B/B/A 检查通过"
+    )
